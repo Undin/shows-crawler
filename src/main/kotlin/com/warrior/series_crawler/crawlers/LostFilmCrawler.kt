@@ -29,7 +29,7 @@ class LostFilmCrawler : Crawler {
         val document = try {
             Jsoup.connect("http://www.lostfilm.tv/browse.php").get()
         } catch (e: IOException) {
-            println(e.printStackTrace())
+            e.printStackTrace()
             return emptyList()
         }
         val content = document.select("div.content_body").first()

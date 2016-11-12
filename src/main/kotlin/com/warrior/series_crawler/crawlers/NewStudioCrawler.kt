@@ -18,7 +18,7 @@ class NewStudioCrawler : Crawler {
         val document = try {
             Jsoup.connect("http://newstudio.tv/").get()
         } catch (e: IOException) {
-            println(e.printStackTrace())
+            e.printStackTrace()
             return emptyList()
         }
 
