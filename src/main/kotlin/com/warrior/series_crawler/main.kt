@@ -15,16 +15,19 @@ import java.io.File
 const val TERMINAL_NOTIFIER = "TERMINAL_NOTIFIER"
 
 fun main(args: Array<String>) {
-    val parser = DefaultParser()
-
     val options = Options()
     options.addOption("s", "settings", true, "path to settings file")
     options.addOption("h", "help", false, "show this help")
 
+    val parser = DefaultParser()
     val line = parser.parse(options, args)
     if (line.hasOption("h")) {
-        val formatter = HelpFormatter()
-        formatter.printHelp("java -jar series-crawler-jarfile.jar [options...]", options)
+        printHelp(options)
+        return
+    }
+    if (!line.hasOption("s")) {
+        println("Missing required option: s")
+        printHelp(options)
         return
     }
     val settingsFile = line.getOptionValue("s")
@@ -45,6 +48,11 @@ fun main(args: Array<String>) {
             "newstudio" -> checkSeries(NewStudioCrawler(), v, terminalNotifier, "http://newstudio.tv/")
         }
     }
+}
+
+private fun printHelp(options: Options) {
+    val formatter = HelpFormatter()
+    formatter.printHelp("java -jar series-crawler-jarfile.jar [options...]", options)
 }
 
 private fun checkSeries(crawler: Crawler, shows: List<String>, terminalNotifier: String, url: String) {
