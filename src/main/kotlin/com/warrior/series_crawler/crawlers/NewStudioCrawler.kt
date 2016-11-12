@@ -9,7 +9,7 @@ import java.util.regex.Pattern
 /**
  * Created by warrior on 10/29/16.
  */
-class NewStudioCrawler : Crawler {
+class NewStudioCrawler(printLogs: Boolean = false) : AbstractCrawler(printLogs) {
 
     private val pattern = Pattern.compile("(.*) \\(Сезон (\\d+), Серия (\\d+)\\).*")
 
@@ -36,7 +36,7 @@ class NewStudioCrawler : Crawler {
                     val episodeNumber = matcher.group(3).toInt()
                     val episode = Crawler.ShowEpisode(showTitle, season, episodeNumber)
                     episodes += episode
-                    println("newstudio: $episode")
+                    log("newstudio: $episode")
                 }
             }
         }

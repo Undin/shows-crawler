@@ -16,7 +16,7 @@ import java.util.regex.Pattern
 /**
  * Created by warrior on 10/29/16.
  */
-class LostFilmCrawler : Crawler {
+class LostFilmCrawler(printLogs: Boolean = false) : AbstractCrawler(printLogs) {
 
     private val rssPattern = Pattern.compile("(.*?) .*\\(S(\\d)+E(\\d+)\\)")
     private val pagePattern = Pattern.compile("(\\d+)\\.(\\d+)")
@@ -60,7 +60,7 @@ class LostFilmCrawler : Crawler {
                 val showTitle = img.attr("title")
                 val episode = Crawler.ShowEpisode(showTitle, season, episodeNumber)
                 episodes += episode
-                println("lostfilm: $episode")
+                log("lostfilm: $episode")
             }
         }
         return episodes
@@ -86,7 +86,7 @@ class LostFilmCrawler : Crawler {
                 val episodeNumber = matcher.group(3).toInt()
                 val episode = Crawler.ShowEpisode(showTitle, season, episodeNumber)
                 episodeSet += episode
-                println("lostfilm: $episode")
+                log("lostfilm: $episode")
             }
         }
 

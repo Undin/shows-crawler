@@ -19,7 +19,9 @@ fun main(args: Array<String>) {
     val options = Options()
     options.addOption("s", "settings", true, "path to settings file")
     options.addOption("r", "results", true, "path to file with previous notifications")
+    options.addOption("l", "logs", false, "print logs")
     options.addOption("h", "help", false, "show this help")
+    val requiredOptions = listOf("s", "r")
 
     val parser = DefaultParser()
     val line = parser.parse(options, args)
@@ -28,16 +30,17 @@ fun main(args: Array<String>) {
         return
     }
     options.options
-            .filter { it.opt != "h" }
+            .filter { it.opt in requiredOptions }
             .forEach {
                 if (!line.hasOption(it.opt)) {
-                    println("Missing required option: s")
+                    println("Missing required option: ${it.opt}")
                     printHelp(options)
                     System.exit(1)
                 }
             }
     val settingsFile = line.getOptionValue("s")
     val resultsPath = line.getOptionValue("r")
+    val printLogs = line.hasOption("l")
 
     val terminalNotifier = System.getenv(TERMINAL_NOTIFIER)
     if (terminalNotifier == null) {
@@ -59,8 +62,8 @@ fun main(args: Array<String>) {
     for ((k, v) in settings) {
         val results = resultsMap[k] ?: emptyMap()
         val newResults = when (k) {
-            "lostfilm" -> checkSeries(LostFilmCrawler(), v, results, terminalNotifier, "http://www.lostfilm.tv/")
-            "newstudio" -> checkSeries(NewStudioCrawler(), v, results, terminalNotifier, "http://newstudio.tv/")
+            "lostfilm" -> checkSeries(LostFilmCrawler(printLogs), v, results, terminalNotifier, "http://www.lostfilm.tv/")
+            "newstudio" -> checkSeries(NewStudioCrawler(printLogs), v, results, terminalNotifier, "http://newstudio.tv/")
             else -> emptyMap()
         }
         newResultsMap[k] = newResults
