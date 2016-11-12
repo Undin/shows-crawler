@@ -1,9 +1,9 @@
-package com.warrior.series_crawler
+package com.warrior.shows_notifier
 
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.warrior.series_crawler.crawlers.LostFilmCrawler
-import com.warrior.series_crawler.crawlers.NewStudioCrawler
+import com.warrior.shows_notifier.crawlers.LostFilmCrawler
+import com.warrior.shows_notifier.crawlers.NewStudioCrawler
 import org.apache.commons.cli.DefaultParser
 import org.apache.commons.cli.HelpFormatter
 import org.apache.commons.cli.Options
@@ -81,7 +81,7 @@ private fun printCurrentTime() {
 
 private fun printHelp(options: Options) {
     val formatter = HelpFormatter()
-    formatter.printHelp("java -jar series-crawler-jarfile.jar [options...]", options)
+    formatter.printHelp("java -jar show-notifier-jarfile.jar [options...]", options)
 }
 
 private fun checkSeries(crawler: Crawler, shows: List<String>, results: Map<String, Episode>,

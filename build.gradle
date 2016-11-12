@@ -34,7 +34,7 @@ shadowJar {
     classifier = null
     manifest {
         attributes (
-                'Main-Class' : 'com.warrior.series_crawler.MainKt',
+                'Main-Class' : 'com.warrior.shows_notifier.MainKt',
                 'Implementation-Version' : version
         )
     }

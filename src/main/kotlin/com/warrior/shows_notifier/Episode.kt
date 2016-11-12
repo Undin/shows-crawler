@@ -1,4 +1,4 @@
-package com.warrior.series_crawler
+package com.warrior.shows_notifier
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties

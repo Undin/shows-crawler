@@ -1,4 +1,4 @@
-package com.warrior.series_crawler
+package com.warrior.shows_notifier
 
 /**
  * Created by warrior on 10/29/16.

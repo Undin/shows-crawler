@@ -1,6 +1,6 @@
-package com.warrior.series_crawler.crawlers
+package com.warrior.shows_notifier.crawlers
 
-import com.warrior.series_crawler.Crawler
+import com.warrior.shows_notifier.Crawler
 
 /**
  * Created by warrior on 11/12/16.
