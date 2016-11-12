@@ -13,7 +13,7 @@ class NewStudioCrawler : Crawler {
 
     private val pattern = Pattern.compile("(.*) \\(Сезон (\\d+), Серия (\\d+)\\).*")
 
-    override fun episodes(): List<Crawler.Episode> {
+    override fun episodes(): List<Crawler.ShowEpisode> {
 
         val document = try {
             Jsoup.connect("http://newstudio.tv/").get()
@@ -23,7 +23,7 @@ class NewStudioCrawler : Crawler {
         }
 
         val elements = document.select("div.torrent")
-        val episodes = ArrayList<Crawler.Episode>(elements.size)
+        val episodes = ArrayList<Crawler.ShowEpisode>(elements.size)
 
         for (element in elements) {
             val desc = element.select("div.tdesc").first()
@@ -34,7 +34,7 @@ class NewStudioCrawler : Crawler {
                     val showTitle = matcher.group(1)
                     val season = matcher.group(2).toInt()
                     val episodeNumber = matcher.group(3).toInt()
-                    val episode = Crawler.Episode(showTitle, season, episodeNumber)
+                    val episode = Crawler.ShowEpisode(showTitle, season, episodeNumber)
                     episodes += episode
                     println("newstudio: $episode")
                 }

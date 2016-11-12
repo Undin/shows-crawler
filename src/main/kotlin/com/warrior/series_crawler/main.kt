@@ -8,6 +8,7 @@ import org.apache.commons.cli.DefaultParser
 import org.apache.commons.cli.HelpFormatter
 import org.apache.commons.cli.Options
 import java.io.File
+import java.util.*
 
 /**
  * Created by warrior on 10/29/16.
@@ -17,6 +18,7 @@ const val TERMINAL_NOTIFIER = "TERMINAL_NOTIFIER"
 fun main(args: Array<String>) {
     val options = Options()
     options.addOption("s", "settings", true, "path to settings file")
+    options.addOption("r", "results", true, "path to file with previous notifications")
     options.addOption("h", "help", false, "show this help")
 
     val parser = DefaultParser()
@@ -25,12 +27,17 @@ fun main(args: Array<String>) {
         printHelp(options)
         return
     }
-    if (!line.hasOption("s")) {
-        println("Missing required option: s")
-        printHelp(options)
-        return
-    }
+    options.options
+            .filter { it.opt != "h" }
+            .forEach {
+                if (!line.hasOption(it.opt)) {
+                    println("Missing required option: s")
+                    printHelp(options)
+                    System.exit(1)
+                }
+            }
     val settingsFile = line.getOptionValue("s")
+    val resultsPath = line.getOptionValue("r")
 
     val terminalNotifier = System.getenv(TERMINAL_NOTIFIER)
     if (terminalNotifier == null) {
@@ -41,13 +48,24 @@ fun main(args: Array<String>) {
     val mapper = ObjectMapper()
     val settings: Map<String, List<String>> = mapper.readValue(File(settingsFile),
             object : TypeReference<Map<String, List<String>>>() {})
-
-    for ((k, v) in settings) {
-        when (k) {
-            "lostfilm" -> checkSeries(LostFilmCrawler(), v, terminalNotifier, "http://www.lostfilm.tv/")
-            "newstudio" -> checkSeries(NewStudioCrawler(), v, terminalNotifier, "http://newstudio.tv/")
-        }
+    val resultsFile = File(resultsPath)
+    val resultsMap: Map<String, Map<String, Episode>> = if (resultsFile.exists()) {
+        mapper.readValue(resultsFile, object : TypeReference<Map<String, Map<String, Episode>>>() {})
+    } else {
+        emptyMap()
     }
+
+    val newResultsMap = HashMap<String, Map<String, Episode>>()
+    for ((k, v) in settings) {
+        val results = resultsMap[k] ?: emptyMap()
+        val newResults = when (k) {
+            "lostfilm" -> checkSeries(LostFilmCrawler(), v, results, terminalNotifier, "http://www.lostfilm.tv/")
+            "newstudio" -> checkSeries(NewStudioCrawler(), v, results, terminalNotifier, "http://newstudio.tv/")
+            else -> emptyMap()
+        }
+        newResultsMap[k] = newResults
+    }
+    mapper.writeValue(resultsFile, newResultsMap)
 }
 
 private fun printHelp(options: Options) {
@@ -55,17 +73,28 @@ private fun printHelp(options: Options) {
     formatter.printHelp("java -jar series-crawler-jarfile.jar [options...]", options)
 }
 
-private fun checkSeries(crawler: Crawler, shows: List<String>, terminalNotifier: String, url: String) {
+private fun checkSeries(crawler: Crawler, shows: List<String>, results: Map<String, Episode>,
+                        terminalNotifier: String, url: String): Map<String, Episode> {
+    val newResults = HashMap<String, Episode>(results)
     val episodes = crawler.episodes()
     for ((showTitle, season, episodeNumber) in episodes) {
         if (showTitle in shows) {
-            val processBuilder = ProcessBuilder(terminalNotifier,
-                    "-message", "S${season}E$episodeNumber",
-                    "-title", "\"$showTitle\"",
-                    "-sound", "default",
-                    "-timeout", Int.MAX_VALUE.toString(),
-                    "-open", url)
-            processBuilder.start()
+            val episode = Episode(season, episodeNumber)
+            val lastShowEpisode = results[showTitle]
+            if (lastShowEpisode == null || lastShowEpisode < episode) {
+                val lastNewEpisode = newResults[showTitle]
+                if (lastNewEpisode == null || lastNewEpisode < episode) {
+                    newResults[showTitle] = episode
+                }
+                val processBuilder = ProcessBuilder(terminalNotifier,
+                        "-message", "S${season}E$episodeNumber",
+                        "-title", "\"$showTitle\"",
+                        "-sound", "default",
+                        "-timeout", Int.MAX_VALUE.toString(),
+                        "-open", url)
+                processBuilder.start()
+            }
         }
     }
+    return newResults
 }

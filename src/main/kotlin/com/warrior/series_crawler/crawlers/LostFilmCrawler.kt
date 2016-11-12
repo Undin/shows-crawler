@@ -21,9 +21,9 @@ class LostFilmCrawler : Crawler {
     private val rssPattern = Pattern.compile("(.*?) .*\\(S(\\d)+E(\\d+)\\)")
     private val pagePattern = Pattern.compile("(\\d+)\\.(\\d+)")
 
-    override fun episodes(): List<Crawler.Episode> = parsePage()
+    override fun episodes(): List<Crawler.ShowEpisode> = parsePage()
 
-    private fun parsePage(): List<Crawler.Episode> {
+    private fun parsePage(): List<Crawler.ShowEpisode> {
         fun Element.isBrClearBoth(): Boolean = tagName() == "br" && attr("clear") == "both"
 
         val document = try {
@@ -49,7 +49,7 @@ class LostFilmCrawler : Crawler {
             }
         }
 
-        val episodes = ArrayList<Crawler.Episode>(groups.size)
+        val episodes = ArrayList<Crawler.ShowEpisode>(groups.size)
         groups.forEach { group ->
             val firstDivText = group.select("div").first().text()
             val matcher = pagePattern.matcher(firstDivText)
@@ -58,7 +58,7 @@ class LostFilmCrawler : Crawler {
                 val episodeNumber = matcher.group(2).toInt()
                 val img = group.select("img.category_icon[title]").first()
                 val showTitle = img.attr("title")
-                val episode = Crawler.Episode(showTitle, season, episodeNumber)
+                val episode = Crawler.ShowEpisode(showTitle, season, episodeNumber)
                 episodes += episode
                 println("lostfilm: $episode")
             }
@@ -66,7 +66,7 @@ class LostFilmCrawler : Crawler {
         return episodes
     }
 
-    private fun parseRSS(): List<Crawler.Episode> {
+    private fun parseRSS(): List<Crawler.ShowEpisode> {
         val page = try {
             Jsoup.connect("http://www.lostfilm.tv/rssdd.xml").get().toString()
         } catch (e: IOException) {
@@ -77,14 +77,14 @@ class LostFilmCrawler : Crawler {
         val mapper = XmlMapper()
         val rss = mapper.readValue(page, RSS::class.java)
 
-        val episodeSet = HashSet<Crawler.Episode>(rss.channel.items.size)
+        val episodeSet = HashSet<Crawler.ShowEpisode>(rss.channel.items.size)
         for (item in rss.channel.items) {
             val matcher = rssPattern.matcher(item.title)
             if (matcher.find()) {
                 val showTitle = matcher.group(1)
                 val season = matcher.group(2).toInt()
                 val episodeNumber = matcher.group(3).toInt()
-                val episode = Crawler.Episode(showTitle, season, episodeNumber)
+                val episode = Crawler.ShowEpisode(showTitle, season, episodeNumber)
                 episodeSet += episode
                 println("lostfilm: $episode")
             }
