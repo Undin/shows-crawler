@@ -8,6 +8,7 @@ import org.apache.commons.cli.DefaultParser
 import org.apache.commons.cli.HelpFormatter
 import org.apache.commons.cli.Options
 import java.io.File
+import java.text.SimpleDateFormat
 import java.util.*
 
 /**
@@ -16,6 +17,8 @@ import java.util.*
 const val TERMINAL_NOTIFIER = "TERMINAL_NOTIFIER"
 
 fun main(args: Array<String>) {
+    printCurrentTime()
+
     val options = Options()
     options.addOption("s", "settings", true, "path to settings file")
     options.addOption("r", "results", true, "path to file with previous notifications")
@@ -69,6 +72,11 @@ fun main(args: Array<String>) {
         newResultsMap[k] = newResults
     }
     mapper.writeValue(resultsFile, newResultsMap)
+}
+
+private fun printCurrentTime() {
+    val dateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm:ss:SSS")
+    println(dateFormat.format(Date()))
 }
 
 private fun printHelp(options: Options) {
