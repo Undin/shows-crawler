@@ -5,6 +5,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.warrior.shows_notifier.crawlers.LostFilmCrawler
 import com.warrior.shows_notifier.crawlers.NewStudioCrawler
+import com.warrior.shows_notifier.notifiers.MacOSNotifier
 import org.apache.commons.cli.DefaultParser
 import org.apache.commons.cli.HelpFormatter
 import org.apache.commons.cli.Options
@@ -15,7 +16,6 @@ import java.util.*
 /**
  * Created by warrior on 10/29/16.
  */
-const val TERMINAL_NOTIFIER = "TERMINAL_NOTIFIER"
 
 fun main(args: Array<String>) {
     printCurrentTime()
@@ -46,12 +46,6 @@ fun main(args: Array<String>) {
     val resultsPath = line.getOptionValue("r")
     val printLogs = line.hasOption("l")
 
-    val terminalNotifier = System.getenv(TERMINAL_NOTIFIER)
-    if (terminalNotifier == null) {
-        System.out.println("$TERMINAL_NOTIFIER variable is not set")
-        System.exit(1)
-    }
-
     val mapper = ObjectMapper().registerKotlinModule()
     val settings: Map<String, List<String>> = mapper.readValue(File(settingsFile))
     val resultsFile = File(resultsPath)
@@ -61,12 +55,14 @@ fun main(args: Array<String>) {
         emptyMap()
     }
 
+    val notifiers = listOf(MacOSNotifier())
+
     val newResultsMap = HashMap<String, Map<String, Episode>>()
     for ((k, v) in settings) {
         val results = resultsMap[k] ?: emptyMap()
         val newResults = when (k) {
-            "lostfilm" -> checkSeries(LostFilmCrawler(printLogs), v, results, terminalNotifier, "http://www.lostfilm.tv/")
-            "newstudio" -> checkSeries(NewStudioCrawler(printLogs), v, results, terminalNotifier, "http://newstudio.tv/")
+            "lostfilm" -> checkSeries(LostFilmCrawler(printLogs), notifiers, v, results, "http://www.lostfilm.tv/")
+            "newstudio" -> checkSeries(NewStudioCrawler(printLogs), notifiers, v, results, "http://newstudio.tv/")
             else -> emptyMap()
         }
         newResultsMap[k] = newResults
@@ -84,11 +80,12 @@ private fun printHelp(options: Options) {
     formatter.printHelp("java -jar show-notifier-jarfile.jar [options...]", options)
 }
 
-private fun checkSeries(crawler: Crawler, shows: List<String>, results: Map<String, Episode>,
-                        terminalNotifier: String, url: String): Map<String, Episode> {
+private fun checkSeries(crawler: Crawler, notifiers: List<Notifier>, shows: List<String>,
+                        results: Map<String, Episode>, url: String): Map<String, Episode> {
     val newResults = HashMap<String, Episode>(results)
     val episodes = crawler.episodes()
-    for ((showTitle, season, episodeNumber) in episodes) {
+    for (showEpisode in episodes) {
+        val (showTitle, season, episodeNumber) = showEpisode
         if (showTitle in shows) {
             val episode = Episode(season, episodeNumber)
             val lastShowEpisode = results[showTitle]
@@ -97,13 +94,9 @@ private fun checkSeries(crawler: Crawler, shows: List<String>, results: Map<Stri
                 if (lastNewEpisode == null || lastNewEpisode < episode) {
                     newResults[showTitle] = episode
                 }
-                val processBuilder = ProcessBuilder(terminalNotifier,
-                        "-message", "S${season}E$episodeNumber",
-                        "-title", "\"$showTitle\"",
-                        "-sound", "default",
-                        "-timeout", Int.MAX_VALUE.toString(),
-                        "-open", url)
-                processBuilder.start()
+                for (notifier in notifiers) {
+                    notifier.notify(showEpisode, url)
+                }
             }
         }
     }
