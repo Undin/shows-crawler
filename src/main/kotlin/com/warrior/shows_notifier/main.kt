@@ -1,7 +1,8 @@
 package com.warrior.shows_notifier
 
-import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.warrior.shows_notifier.crawlers.LostFilmCrawler
 import com.warrior.shows_notifier.crawlers.NewStudioCrawler
 import org.apache.commons.cli.DefaultParser
@@ -51,12 +52,11 @@ fun main(args: Array<String>) {
         System.exit(1)
     }
 
-    val mapper = ObjectMapper()
-    val settings: Map<String, List<String>> = mapper.readValue(File(settingsFile),
-            object : TypeReference<Map<String, List<String>>>() {})
+    val mapper = ObjectMapper().registerKotlinModule()
+    val settings: Map<String, List<String>> = mapper.readValue(File(settingsFile))
     val resultsFile = File(resultsPath)
     val resultsMap: Map<String, Map<String, Episode>> = if (resultsFile.exists()) {
-        mapper.readValue(resultsFile, object : TypeReference<Map<String, Map<String, Episode>>>() {})
+        mapper.readValue(resultsFile)
     } else {
         emptyMap()
     }

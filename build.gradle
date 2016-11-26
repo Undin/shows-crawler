@@ -17,13 +17,18 @@ allprojects {
 apply plugin: 'kotlin'
 apply plugin: 'com.github.johnrengelman.shadow'
 
+def versions = [
+        jackson: '2.8.5'
+]
+
 dependencies {
     compile 'org.jetbrains.kotlin:kotlin-stdlib:1.0.5'
     compile 'org.jetbrains.kotlinx:kotlinx-support-jdk8:0.3'
 
     compile 'org.jsoup:jsoup:1.10.1'
-    compile 'com.fasterxml.jackson.core:jackson-databind:2.8.4'
-    compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.6.3'
+    compile 'com.fasterxml.jackson.core:jackson-databind:' + versions.jackson
+    compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:' + versions.jackson
+    compile 'com.fasterxml.jackson.module:jackson-module-kotlin:' + versions.jackson
     compile 'org.codehaus.woodstox:woodstox-core-asl:4.4.1'
 
     compile 'commons-cli:commons-cli:1.3.1'
