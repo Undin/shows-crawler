@@ -5,7 +5,7 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
-import com.warrior.shows_notifier.Crawler
+import com.warrior.shows_notifier.ShowEpisode
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
@@ -21,9 +21,9 @@ class LostFilmCrawler(printLogs: Boolean = false) : AbstractCrawler(printLogs) {
     private val rssPattern = Pattern.compile("(.*?) .*\\(S(\\d)+E(\\d+)\\)")
     private val pagePattern = Pattern.compile("(\\d+)\\.(\\d+)")
 
-    override fun episodes(): List<Crawler.ShowEpisode> = parsePage()
+    override fun episodes(): List<ShowEpisode> = parsePage()
 
-    private fun parsePage(): List<Crawler.ShowEpisode> {
+    private fun parsePage(): List<ShowEpisode> {
         fun Element.isBrClearBoth(): Boolean = tagName() == "br" && attr("clear") == "both"
 
         val document = try {
@@ -49,7 +49,7 @@ class LostFilmCrawler(printLogs: Boolean = false) : AbstractCrawler(printLogs) {
             }
         }
 
-        val episodes = ArrayList<Crawler.ShowEpisode>(groups.size)
+        val episodes = ArrayList<ShowEpisode>(groups.size)
         groups.forEach { group ->
             val firstDivText = group.select("div").first().text()
             val matcher = pagePattern.matcher(firstDivText)
@@ -58,7 +58,7 @@ class LostFilmCrawler(printLogs: Boolean = false) : AbstractCrawler(printLogs) {
                 val episodeNumber = matcher.group(2).toInt()
                 val img = group.select("img.category_icon[title]").first()
                 val showTitle = img.attr("title")
-                val episode = Crawler.ShowEpisode(showTitle, season, episodeNumber)
+                val episode = ShowEpisode(showTitle, season, episodeNumber)
                 episodes += episode
                 log("lostfilm: $episode")
             }
@@ -66,7 +66,7 @@ class LostFilmCrawler(printLogs: Boolean = false) : AbstractCrawler(printLogs) {
         return episodes
     }
 
-    private fun parseRSS(): List<Crawler.ShowEpisode> {
+    private fun parseRSS(): List<ShowEpisode> {
         val page = try {
             Jsoup.connect("http://www.lostfilm.tv/rssdd.xml").get().toString()
         } catch (e: IOException) {
@@ -77,14 +77,14 @@ class LostFilmCrawler(printLogs: Boolean = false) : AbstractCrawler(printLogs) {
         val mapper = XmlMapper()
         val rss = mapper.readValue(page, RSS::class.java)
 
-        val episodeSet = HashSet<Crawler.ShowEpisode>(rss.channel.items.size)
+        val episodeSet = HashSet<ShowEpisode>(rss.channel.items.size)
         for (item in rss.channel.items) {
             val matcher = rssPattern.matcher(item.title)
             if (matcher.find()) {
                 val showTitle = matcher.group(1)
                 val season = matcher.group(2).toInt()
                 val episodeNumber = matcher.group(3).toInt()
-                val episode = Crawler.ShowEpisode(showTitle, season, episodeNumber)
+                val episode = ShowEpisode(showTitle, season, episodeNumber)
                 episodeSet += episode
                 log("lostfilm: $episode")
             }

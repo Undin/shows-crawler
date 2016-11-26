@@ -5,8 +5,4 @@ package com.warrior.shows_notifier
  */
 interface Crawler {
     fun episodes(): List<ShowEpisode>
-
-    data class ShowEpisode(val showTitle: String, val season: Int, val episodeNumber: Int) {
-        override fun toString(): String = "$showTitle S${season}E${episodeNumber}"
-    }
 }
