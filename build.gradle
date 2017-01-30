@@ -3,8 +3,8 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.3'
-        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.0.5'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.4'
+        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.0.6'
     }
 }
 
@@ -22,7 +22,7 @@ def versions = [
 ]
 
 dependencies {
-    compile 'org.jetbrains.kotlin:kotlin-stdlib:1.0.5'
+    compile 'org.jetbrains.kotlin:kotlin-stdlib:1.0.6'
     compile 'org.jetbrains.kotlinx:kotlinx-support-jdk8:0.3'
 
     compile 'org.jsoup:jsoup:1.10.1'
@@ -35,7 +35,7 @@ dependencies {
 }
 
 shadowJar {
-    version = 0.2
+    version = '0.2.1'
     classifier = null
     manifest {
         attributes (
