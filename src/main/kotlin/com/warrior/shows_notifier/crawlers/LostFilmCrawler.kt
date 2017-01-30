@@ -27,7 +27,7 @@ class LostFilmCrawler(printLogs: Boolean = false) : AbstractCrawler(printLogs) {
         fun Element.isBrClearBoth(): Boolean = tagName() == "br" && attr("clear") == "both"
 
         val document = try {
-            Jsoup.connect("http://www.lostfilm.tv/browse.php").get()
+            Jsoup.connect("http://old.lostfilm.tv/browse.php").get()
         } catch (e: IOException) {
             e.printStackTrace()
             return emptyList()
