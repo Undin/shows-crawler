@@ -1,0 +1,27 @@
+apply plugin: 'kotlin'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+version = '0.2.1'
+
+shadowJar {
+    classifier = null
+    manifest {
+        attributes (
+                'Main-Class' : 'com.warrior.shows_notifier.MainKt',
+                'Implementation-Version' : version
+        )
+    }
+}
+
+dependencies {
+    compile libraries.kotlin
+    compile libraries.kotlinJdk8
+
+    compile libraries.jsoup
+    compile libraries.jackson
+    compile libraries.jacksonXml
+    compile libraries.jacksonKotlin
+    compile libraries.woodstox
+
+    compile libraries.commonsCli
+}
