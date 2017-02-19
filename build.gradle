@@ -15,7 +15,8 @@ allprojects {
 }
 
 def versions = [
-        jackson             : '2.8.6'
+        jackson             : '2.8.6',
+        retrofit            : '2.1.0'
 ]
 
 ext.libraries = [
@@ -25,8 +26,15 @@ ext.libraries = [
         jsoup               : 'org.jsoup:jsoup:1.10.2',
         jackson             : 'com.fasterxml.jackson.core:jackson-databind:' + versions.jackson,
         jacksonXml          : 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:' + versions.jackson,
+        jacksonYaml         : 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:' + versions.jackson,
         jacksonKotlin       : 'com.fasterxml.jackson.module:jackson-module-kotlin:' + versions.jackson,
         woodstox            : 'org.codehaus.woodstox:woodstox-core-asl:4.4.1',
 
-        commonsCli          : 'commons-cli:commons-cli:1.3.1'
+        commonsCli          : 'commons-cli:commons-cli:1.3.1',
+
+        retrofit            : 'com.squareup.retrofit2:retrofit:' + versions.retrofit,
+        retrofitJackson     : 'com.squareup.retrofit2:converter-jackson:' + versions.retrofit,
+        okhttpLogger        : 'com.squareup.okhttp3:logging-interceptor:3.6.0',
+
+        postgres            : 'org.postgresql:postgresql:9.4.1212'
 ]

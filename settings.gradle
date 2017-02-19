@@ -1,2 +1,3 @@
 rootProject.name = 'shows-notifier'
 include 'notifier'
+include 'shows-collector'

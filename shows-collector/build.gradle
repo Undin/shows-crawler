@@ -1,0 +1,16 @@
+apply plugin: 'kotlin'
+
+dependencies {
+    compile libraries.kotlin
+    compile libraries.kotlinJdk8
+
+    compile libraries.postgres
+
+    compile libraries.jacksonKotlin
+    compile libraries.jacksonYaml
+
+    compile libraries.retrofit
+    compile libraries.retrofitJackson
+    compile libraries.okhttpLogger
+    compile libraries.jsoup
+}
