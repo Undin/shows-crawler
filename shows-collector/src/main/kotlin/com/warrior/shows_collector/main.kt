@@ -6,7 +6,6 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.warrior.shows_collector.lostfilm.LostFilmCollector
 import com.warrior.shows_collector.newstudio.NewStudioCollector
-import kotlinx.support.jdk7.use
 import java.io.File
 import java.io.FileNotFoundException
 import java.sql.Connection
@@ -98,7 +97,7 @@ private fun findFile(fileName: String): File {
     } else {
         // it's terrible way to take resources
         // but kotlin doesn't have syntax to get Class object from top level function
-        val resourceUrl = object {}.javaClass.classLoader.getResource(fileName)
+        val resourceUrl = object {}::class.java.classLoader.getResource(fileName)
         if (resourceUrl != null) {
             return File(resourceUrl.file)
         } else {

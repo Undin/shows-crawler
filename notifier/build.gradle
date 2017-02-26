@@ -3,6 +3,8 @@ apply plugin: 'com.github.johnrengelman.shadow'
 
 version = '0.2.1'
 
+compileKotlin.kotlinOptions.jvmTarget = '1.8'
+
 shadowJar {
     classifier = null
     manifest {
@@ -15,7 +17,7 @@ shadowJar {
 
 dependencies {
     compile libraries.kotlin
-    compile libraries.kotlinJdk8
+    compile libraries.kotlinReflect
 
     compile libraries.jsoup
     compile libraries.jackson

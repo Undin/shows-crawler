@@ -1,16 +1,19 @@
 buildscript {
+    ext.kotlinVersion = '1.1.0-rc-91'
     repositories {
         jcenter()
+        maven { url 'http://dl.bintray.com/kotlin/kotlin-eap-1.1' }
     }
     dependencies {
         classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.4'
-        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.0.6'
+        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:' + kotlinVersion
     }
 }
 
 allprojects {
     repositories {
         jcenter()
+        maven { url 'http://dl.bintray.com/kotlin/kotlin-eap-1.1' }
     }
 }
 
@@ -20,8 +23,8 @@ def versions = [
 ]
 
 ext.libraries = [
-        kotlin              : 'org.jetbrains.kotlin:kotlin-stdlib:1.0.6',
-        kotlinJdk8          : 'org.jetbrains.kotlinx:kotlinx-support-jdk8:0.3',
+        kotlin              : 'org.jetbrains.kotlin:kotlin-stdlib-jre8:' + kotlinVersion,
+        kotlinReflect       : 'org.jetbrains.kotlin:kotlin-reflect:' + kotlinVersion,
 
         jsoup               : 'org.jsoup:jsoup:1.10.2',
         jackson             : 'com.fasterxml.jackson.core:jackson-databind:' + versions.jackson,
