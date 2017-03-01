@@ -1,8 +1,7 @@
 buildscript {
-    ext.kotlinVersion = '1.1.0-rc-91'
+    ext.kotlinVersion = '1.1.0'
     repositories {
         jcenter()
-        maven { url 'http://dl.bintray.com/kotlin/kotlin-eap-1.1' }
     }
     dependencies {
         classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.4'
@@ -13,7 +12,6 @@ buildscript {
 allprojects {
     repositories {
         jcenter()
-        maven { url 'http://dl.bintray.com/kotlin/kotlin-eap-1.1' }
     }
 }
 
