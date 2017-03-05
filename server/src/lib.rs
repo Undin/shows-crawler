@@ -1,3 +1,5 @@
-#[macro_use] extern crate serde_derive;
+extern crate reqwest;
+#[macro_use]
+extern crate serde_derive;
 
-pub mod entities;
+pub mod telegram_api;
