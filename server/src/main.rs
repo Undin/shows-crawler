@@ -13,13 +13,24 @@ use diesel::prelude::*;
 use r2d2::{Config, Pool};
 use r2d2_diesel::ConnectionManager;
 use reqwest::Client;
-use server::models;
-use server::schema::users;
-use server::telegram_api::{Chat, Message, TelegramApi, Update, UpdateResponse, User};
+use server::telegram_api::{Chat, Message, TelegramApi, Update, User};
 use std::convert::Into;
+use std::str::SplitWhitespace;
 use std::env;
 use std::sync::Arc;
 use threadpool::ThreadPool;
+
+#[derive(Clone)]
+struct Components {
+    pub api: Arc<TelegramApi>,
+    pub connection_pool: Pool<ConnectionManager<PgConnection>>
+}
+
+impl Components {
+    pub fn new(api: TelegramApi, connection_pool: Pool<ConnectionManager<PgConnection>>) -> Components {
+        Components { api: Arc::new(api), connection_pool: connection_pool}
+    }
+}
 
 fn main() {
     dotenv().ok();
@@ -27,21 +38,20 @@ fn main() {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
     let client: Client = reqwest::Client::new().unwrap();
-    let api: Arc<TelegramApi> = Arc::new(TelegramApi::new(client, bot_token));
+    let components = Components::new(TelegramApi::new(client, bot_token),
+                                     create_connection_pool(database_url));
     let thread_pool = ThreadPool::new_with_name("thread-pool".into(), 4);
-    let connection_pool = create_connection_pool(database_url);
 
     let mut update_id = 0i32;
 
     loop {
-        match api.get_updates(20, 1, update_id) {
+        match components.api.get_updates(20, 1, update_id) {
             Ok(update_response) => {
                 let updates: Vec<Update> = update_response.result;
                 for update in updates {
                     update_id = update.update_id + 1;
-                    let api = api.clone();
-                    let connection_pool = connection_pool.clone();
-                    thread_pool.execute(move || process_update(api, connection_pool, update));
+                    let components = components.clone();
+                    thread_pool.execute(move || process_update(components, update));
                 }
             }
             Err(error) => println!("{}", error),
@@ -55,25 +65,85 @@ fn create_connection_pool<S: Into<String>>(database_url: S) -> Pool<ConnectionMa
     Pool::new(config, connection_manager).expect("Failed to create connection pool")
 }
 
-fn process_update(api: Arc<TelegramApi>, connection_pool: Pool<ConnectionManager<PgConnection>>, update: Update) {
+fn process_update(components: Components, update: Update) {
     for message in update.message {
         match message {
             Message { chat: Chat { id: chat_id, .. },
                 from: Some(User { id: user_id, first_name }),
                 text: Some(user_text), .. } => {
                 println!("{}", user_text);
-                api.send_message(chat_id, &format!("Hello, {}!", &first_name));
-                if user_text.starts_with("/start") {
-                    let ref connection = *connection_pool.get()
-                        .expect("Unable get connection from connection pool");
-                    let user = models::User { id: user_id, first_name: first_name };
-                    diesel::insert(&user.on_conflict_do_nothing())
-                        .into(users::table)
-                        .execute(connection)
-                        .expect("Failed on insert user to db");
+                let mut iter: SplitWhitespace = user_text.split_whitespace();
+                let command = iter.next();
+                match command {
+                    Some("/start") => on_start(&components, chat_id, user_id, first_name),
+                    Some("/subscribe") => on_subscribe(&components, chat_id, user_id, &mut iter),
+                    _ => {
+                        println!("unknown command");
+                    }
                 }
             }
             _ => println!("skip message"),
+        }
+    }
+}
+
+fn on_start(components: &Components, chat_id: i64, user_id: i32, first_name: String) {
+    println!("on start");
+
+    use server::models::User;
+    use server::schema::users;
+
+    components.api.send_message(chat_id, &format!("Hello, {}!", &first_name));
+    let ref connection = *components.connection_pool.get()
+        .expect("Unable get connection from connection pool");
+    let user = User::new(user_id, first_name);
+    diesel::insert(&user.on_conflict_do_nothing())
+        .into(users::table)
+        .execute(connection)
+        .expect("Failed on insert user to db");
+}
+
+fn on_subscribe(components: &Components, chat_id: i64, user_id: i32, message_iter: &mut SplitWhitespace) {
+    println!("subscribe command");
+
+    use server::models::{Show, Source, Subscription};
+    use server::schema::shows::dsl::*;
+    use server::schema::sources::dsl::*;
+    use server::schema::subscriptions;
+
+    let maybe_source = message_iter.next();
+    let maybe_show = message_iter.next();
+    match (maybe_source, maybe_show) {
+        (Some(source_name), Some(show_name)) => {
+            let ref connection = *components.connection_pool.get()
+                .expect("Unable get connection from connection pool");
+            let query_result = sources
+                .filter(name.eq(source_name))
+                .first::<Source>(connection);
+            if let Ok(source) = query_result {
+                let query_result = shows
+                    .filter(title.eq(show_name).and(source_id.eq(source.id)))
+                    .first::<Show>(connection);
+                if let Ok(show) = query_result {
+                    let subscription = Subscription::new(show.id, user_id);
+                    let insertion_result = diesel::insert(&subscription)
+                        .into(subscriptions::table)
+                        .execute(connection);
+                    match insertion_result {
+                        Ok(_) => {
+                            components.api.send_message(chat_id, &format!("subscription ({}, {}) created!", source_name, show_name));
+                        },
+                        Err(error) => println!("{}", error)
+                    }
+                } else {
+                    components.api.send_message(chat_id, &format!("show '{}' not found.", show_name));
+                }
+            } else {
+                components.api.send_message(chat_id, &format!("source '{}' not found.", source_name));
+            }
+        },
+        _ => {
+            components.api.send_message(chat_id, "Usage: /subscribe <source> <show_name>");
         }
     }
 }
