@@ -1,4 +1,6 @@
 #[macro_use]
+extern crate derive_new;
+#[macro_use]
 extern crate diesel;
 #[macro_use]
 extern crate diesel_codegen;

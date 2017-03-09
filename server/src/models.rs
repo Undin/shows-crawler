@@ -1,6 +1,6 @@
 use schema::{users, sources, shows, subscriptions};
 
-#[derive(Identifiable, Queryable, Insertable, Associations, Debug)]
+#[derive(new, Identifiable, Queryable, Insertable, Associations, Debug)]
 #[has_many(subscriptions)]
 #[table_name="users"]
 pub struct User {
@@ -8,7 +8,7 @@ pub struct User {
     pub first_name: String,
 }
 
-#[derive(Identifiable, Queryable, Insertable, Associations, Debug)]
+#[derive(new, Identifiable, Queryable, Insertable, Associations, Debug)]
 #[has_many(shows)]
 #[table_name="sources"]
 pub struct Source {
@@ -16,7 +16,7 @@ pub struct Source {
     pub name: String,
 }
 
-#[derive(Identifiable, Queryable, Insertable, Associations, Debug)]
+#[derive(new, Identifiable, Queryable, Insertable, Associations, Debug)]
 #[has_many(subscriptions)]
 #[belongs_to(Source)]
 #[table_name="shows"]
@@ -30,7 +30,7 @@ pub struct Show {
     pub last_episode: Option<i32>,
 }
 
-#[derive(Queryable, Insertable, Associations, Debug)]
+#[derive(new, Queryable, Insertable, Associations, Debug)]
 #[belongs_to(User, Show)]
 #[table_name="subscriptions"]
 pub struct Subscription {
