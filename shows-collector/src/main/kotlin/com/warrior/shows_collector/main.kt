@@ -77,7 +77,7 @@ private fun sourcesIds(sourceNames: List<String>, connection: Connection): List<
         val id = statement.use {
             try {
                 val result = statement.executeQuery("SELECT (id) FROM sources WHERE name='$name';")
-                result.getInt("id")
+                if (result.next()) result.getInt("id") else null
             } catch (e: Exception) {
                 e.printStackTrace()
                 null
