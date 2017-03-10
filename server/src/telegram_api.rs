@@ -1,4 +1,5 @@
 use reqwest::{Client, Result, Response};
+use std::collections::HashMap;
 
 pub struct TelegramApi {
     client: Client,
@@ -22,9 +23,14 @@ impl TelegramApi {
     }
 
     pub fn send_message(&self, chat_id: i64, text: &str) -> Result<()> {
-        let url = format!("{}/sendMessage?chat_id={}&text={}", self.base_url, chat_id, text);
+        let mut params = HashMap::with_capacity(2);
+        params.insert("chat_id", chat_id.to_string());
+        params.insert("text", text.to_owned());
+        let url = format!("{}/sendMessage", self.base_url);
         println!("--> {}", url);
-        let response = self.client.post(&url).send();
+        let response = self.client.post(&url)
+            .form(&params)
+            .send();
         response.map(|_| ())
     }
 }
