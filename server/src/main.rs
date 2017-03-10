@@ -1,46 +1,25 @@
 extern crate diesel;
 extern crate dotenv;
-extern crate reqwest;
-extern crate r2d2;
-extern crate r2d2_diesel;
 extern crate server;
 extern crate threadpool;
 
 use dotenv::dotenv;
-use diesel::pg::PgConnection;
 use diesel::pg::upsert::*;
 use diesel::prelude::*;
-use r2d2::{Config, Pool};
-use r2d2_diesel::ConnectionManager;
-use reqwest::Client;
+use server::Components;
 use server::models::{Show, Source, Subscription};
-use server::telegram_api::{Chat, Message, TelegramApi, Update, User};
+use server::telegram_api::{Chat, Message, Update, User};
 use std::convert::Into;
 use std::str::SplitWhitespace;
 use std::env;
-use std::sync::Arc;
 use threadpool::ThreadPool;
-
-#[derive(Clone)]
-struct Components {
-    pub api: Arc<TelegramApi>,
-    pub connection_pool: Pool<ConnectionManager<PgConnection>>
-}
-
-impl Components {
-    pub fn new(api: TelegramApi, connection_pool: Pool<ConnectionManager<PgConnection>>) -> Components {
-        Components { api: Arc::new(api), connection_pool: connection_pool}
-    }
-}
 
 fn main() {
     dotenv().ok();
     let bot_token = env::var("BOT_TOKEN").expect("BOT_TOKEN variable must be set");
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
-    let client: Client = reqwest::Client::new().unwrap();
-    let components = Components::new(TelegramApi::new(client, bot_token),
-                                     create_connection_pool(database_url));
+    let components = Components::new(bot_token, database_url);
     let thread_pool = ThreadPool::new_with_name("thread-pool".into(), 4);
 
     let mut update_id = 0i32;
@@ -60,18 +39,14 @@ fn main() {
     }
 }
 
-fn create_connection_pool<S: Into<String>>(database_url: S) -> Pool<ConnectionManager<PgConnection>> {
-    let config = Config::default();
-    let connection_manager = ConnectionManager::new(database_url);
-    Pool::new(config, connection_manager).expect("Failed to create connection pool")
-}
-
 fn process_update(components: Components, update: Update) {
     for message in update.message {
         match message {
-            Message { chat: Chat { id: chat_id, .. },
+            Message {
+                chat: Chat { id: chat_id, .. },
                 from: Some(User { id: user_id, first_name }),
-                text: Some(user_text), .. } => {
+                text: Some(user_text), ..
+            } => {
                 println!("{}", user_text);
                 let mut iter: SplitWhitespace = user_text.split_whitespace();
                 let command = iter.next();
@@ -116,8 +91,7 @@ fn on_subscribe(components: &Components, chat_id: i64, user_id: i32, message_ite
     let maybe_show = message_iter.next();
     match (maybe_source, maybe_show) {
         (Some(source_name), Some(show_name)) => {
-            let ref connection = *components.connection_pool.get()
-                .expect("Unable get connection from connection pool");
+            let ref connection = *components.get_connection();
             let query_result = sources
                 .filter(name.eq(source_name))
                 .first::<Source>(connection);
@@ -154,9 +128,7 @@ fn on_sources_command(components: &Components, chat_id: i64) {
 
     use server::schema::sources::dsl::*;
 
-    let ref connection = *components.connection_pool.get()
-        .expect("Unable get connection from connection pool");
-
+    let ref connection = *components.get_connection();
     if let Ok(source_vec) = sources.load::<Source>(connection) {
         let all_sources = source_vec.iter()
             .map(|s| &s.name)

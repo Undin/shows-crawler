@@ -8,8 +8,8 @@ pub struct TelegramApi {
 
 impl TelegramApi {
 
-    pub fn new(client: Client, token: String) -> TelegramApi {
-        TelegramApi { client: client, base_url: format!("https://api.telegram.org/bot{}", token) }
+    pub fn new<S: Into<String>>(client: Client, token: S) -> TelegramApi {
+        TelegramApi { client: client, base_url: format!("https://api.telegram.org/bot{}", token.into()) }
     }
 
     pub fn get_updates(&self, timeout: u32, limit: u32, offset: i32) -> Result<UpdateResponse> {
