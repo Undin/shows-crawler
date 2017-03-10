@@ -13,6 +13,7 @@ use diesel::prelude::*;
 use r2d2::{Config, Pool};
 use r2d2_diesel::ConnectionManager;
 use reqwest::Client;
+use server::models::{Show, Source, Subscription};
 use server::telegram_api::{Chat, Message, TelegramApi, Update, User};
 use std::convert::Into;
 use std::str::SplitWhitespace;
@@ -77,6 +78,7 @@ fn process_update(components: Components, update: Update) {
                 match command {
                     Some("/start") => on_start(&components, chat_id, user_id, first_name),
                     Some("/subscribe") => on_subscribe(&components, chat_id, user_id, &mut iter),
+                    Some("/sources") => on_sources_command(&components, chat_id),
                     _ => {
                         println!("unknown command");
                     }
@@ -106,7 +108,6 @@ fn on_start(components: &Components, chat_id: i64, user_id: i32, first_name: Str
 fn on_subscribe(components: &Components, chat_id: i64, user_id: i32, message_iter: &mut SplitWhitespace) {
     println!("subscribe command");
 
-    use server::models::{Show, Source, Subscription};
     use server::schema::shows::dsl::*;
     use server::schema::sources::dsl::*;
     use server::schema::subscriptions;
@@ -145,5 +146,25 @@ fn on_subscribe(components: &Components, chat_id: i64, user_id: i32, message_ite
         _ => {
             components.api.send_message(chat_id, "Usage: /subscribe <source> <show_name>");
         }
+    }
+}
+
+fn on_sources_command(components: &Components, chat_id: i64) {
+    println!("sources command");
+
+    use server::schema::sources::dsl::*;
+
+    let ref connection = *components.connection_pool.get()
+        .expect("Unable get connection from connection pool");
+
+    if let Ok(source_vec) = sources.load::<Source>(connection) {
+        let all_sources = source_vec.iter()
+            .map(|s| &s.name)
+            .fold(String::new(), |mut acc, x| {
+                acc.push_str(x);
+                acc.push('\n');
+                acc
+            });
+        components.api.send_message(chat_id, &all_sources);
     }
 }
