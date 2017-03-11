@@ -72,7 +72,6 @@ fn on_start(components: &Components, chat_id: i64, user_id: i32, first_name: Str
     println!("on start");
 
     use server::models::User;
-    use server::schema::users;
 
     components.api.send_message(chat_id, &format!("Hello, {}!", &first_name));
     let ref connection = *components.connection_pool.get()
@@ -88,13 +87,13 @@ fn on_subscribe(components: &Components, chat_id: i64, user_id: i32, message_ite
     println!("subscribe command");
 
     let source_name = message_iter.next();
-    let show_title = message_iter.next();
-    match (source_name, show_title) {
-        (Some(source_name), Some(show_title)) => {
+    let show_title = message_iter.join(" ");
+    match source_name {
+        Some(source_name) if !show_title.is_empty() => {
             let ref connection = *components.get_connection();
             let query = sources::table.inner_join(shows::table)
                 .select(shows::id)
-                .filter(sources::name.eq(source_name).and(shows::title.eq(show_title)));
+                .filter(sources::name.eq(source_name).and(shows::title.eq(&show_title)));
             match query.first::<i64>(connection) {
                 Ok(show_id) => {
                     let subscription = Subscription::new(show_id, user_id);
