@@ -55,9 +55,10 @@ fn process_update(components: Components, update: Update) {
                 match command {
                     Some("/start") => on_start(&components, chat_id, user_id, first_name),
                     Some("/stop") => on_stop(&components, user_id),
-                    Some("/subscribe") => on_subscribe(&components, chat_id, user_id, &mut iter),
                     Some("/sources") => on_sources_command(&components, chat_id),
                     Some("/shows") => on_shows_command(&components, chat_id, &mut iter),
+                    Some("/subscribe") => on_subscribe(&components, chat_id, user_id, &mut iter),
+                    Some("/unsubscribe") => on_unsubscribe(&components, chat_id, user_id, &mut iter),
                     _ => {
                         println!("unknown command");
                     }
@@ -98,42 +99,6 @@ fn on_stop(components: &Components, user_id: i32) {
         .expect("Failed on update user");
 }
 
-fn on_subscribe(components: &Components, chat_id: i64, user_id: i32, message_iter: &mut SplitWhitespace) {
-    println!("subscribe command");
-
-    let source_name = message_iter.next();
-    let show_title = message_iter.join(" ");
-    match source_name {
-        Some(source_name) if !show_title.is_empty() => {
-            let ref connection = *components.get_connection();
-            let query = sources::table.inner_join(shows::table)
-                .select(shows::id)
-                .filter(sources::name.eq(source_name).and(shows::title.eq(&show_title)));
-            match query.first::<i64>(connection) {
-                Ok(show_id) => {
-                    let subscription = Subscription::new(show_id, user_id);
-                    let insertion_result = diesel::insert(&subscription)
-                        .into(subscriptions::table)
-                        .execute(connection);
-                    match insertion_result {
-                        Ok(_) => {
-                            components.api.send_message(chat_id, &format!("subscription ({}, {}) created!", source_name, show_title));
-                        },
-                        Err(error) => println!("{}", error)
-                    }
-                },
-                Err(error) => {
-                    components.api.send_message(chat_id, &format!("({}, {}) isn't found", source_name, show_title));
-                    println!("{}", error);
-                }
-            }
-        },
-        _ => {
-            components.api.send_message(chat_id, "Usage: /subscribe <source> <show_title>");
-        }
-    }
-}
-
 fn on_sources_command(components: &Components, chat_id: i64) {
     println!("sources command");
 
@@ -170,5 +135,79 @@ fn on_shows_command(components: &Components, chat_id: i64, message_iter: &mut Sp
         }
     } else {
         components.api.send_message(chat_id, "Usage: /shows <source>");
+    }
+}
+
+fn on_subscribe(components: &Components, chat_id: i64, user_id: i32, message_iter: &mut SplitWhitespace) {
+    println!("subscribe command");
+
+    let source_name = message_iter.next();
+    let show_title = message_iter.join(" ");
+    match source_name {
+        Some(source_name) if !show_title.is_empty() => {
+            let ref connection = *components.get_connection();
+            let query = sources::table.inner_join(shows::table)
+                .select(shows::id)
+                .filter(sources::name.eq(source_name).and(shows::title.eq(&show_title)));
+            match query.first::<i64>(connection) {
+                Ok(show_id) => {
+                    let subscription = Subscription::new(show_id, user_id);
+                    let insertion_result = diesel::insert(&subscription)
+                        .into(subscriptions::table)
+                        .execute(connection);
+                    match insertion_result {
+                        Ok(_) => {
+                            components.api.send_message(chat_id, &format!("subscription ({}, {}) created!", source_name, show_title));
+                        },
+                        Err(error) => println!("{}", error)
+                    }
+                },
+                Err(error) => {
+                    components.api.send_message(chat_id, &format!("({}, {}) isn't found", source_name, show_title));
+                    println!("{}", error);
+                }
+            }
+        },
+        _ => {
+            components.api.send_message(chat_id, "Usage: /subscribe <source> <show_title>");
+        }
+    }
+}
+
+fn on_unsubscribe(components: &Components, chat_id: i64, user_id: i32, message_iter: &mut SplitWhitespace) {
+    println!("subscribe command");
+
+    let source_name = message_iter.next();
+    let show_title = message_iter.join(" ");
+
+    match source_name {
+        Some(source_name) if !show_title.is_empty() => {
+            let ref connection = *components.get_connection();
+            // TODO: use ORM api instead of raw SQL after diesel implements it
+            let command = format!(
+                "DELETE FROM subscriptions
+                 WHERE (user_id, show_id) IN
+                      (SELECT
+                         user_id,
+                         show_id
+                       FROM users
+                         INNER JOIN subscriptions ON users.id = subscriptions.user_id
+                         INNER JOIN shows ON subscriptions.show_id = shows.id
+                         INNER JOIN sources ON sources.id = shows.source_id
+                       WHERE users.id = {} AND sources.name = '{}' AND shows.title = '{}');",
+                user_id, source_name, show_title);
+            match connection.execute(&command) {
+                Ok(1) => {
+                    components.api.send_message(chat_id, &format!("subscription ({}, {}) removed", source_name, show_title));
+                },
+                Ok(0) => {
+                    components.api.send_message(chat_id, &format!("subscription ({}, {}) not found", source_name, show_title));
+                },
+                res @ _ => println!("{:?}", res),
+            }
+        },
+        _ => {
+            components.api.send_message(chat_id, "Usage: /unsubscribe <source> <show_title>");
+        }
     }
 }
