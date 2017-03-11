@@ -5,7 +5,6 @@ extern crate server;
 extern crate threadpool;
 
 use dotenv::dotenv;
-use diesel::pg::upsert::*;
 use diesel::prelude::*;
 use itertools::Itertools;
 use server::Components;
@@ -55,6 +54,7 @@ fn process_update(components: Components, update: Update) {
                 let command = iter.next();
                 match command {
                     Some("/start") => on_start(&components, chat_id, user_id, first_name),
+                    Some("/stop") => on_stop(&components, user_id),
                     Some("/subscribe") => on_subscribe(&components, chat_id, user_id, &mut iter),
                     Some("/sources") => on_sources_command(&components, chat_id),
                     Some("/shows") => on_shows_command(&components, chat_id, &mut iter),
@@ -68,19 +68,34 @@ fn process_update(components: Components, update: Update) {
     }
 }
 
-fn on_start(components: &Components, chat_id: i64, user_id: i32, first_name: String) {
+fn on_start(components: &Components, chat_id: i64, user_id: i32, user_name: String) {
     println!("on start");
 
     use server::models::User;
+    use server::schema::users::dsl::*;
 
-    components.api.send_message(chat_id, &format!("Hello, {}!", &first_name));
-    let ref connection = *components.connection_pool.get()
-        .expect("Unable get connection from connection pool");
-    let user = User::new(user_id, first_name, true);
-    diesel::insert(&user.on_conflict_do_nothing())
-        .into(users::table)
+    components.api.send_message(chat_id, &format!("Hello, {}!", &user_name));
+    let ref connection = *components.get_connection();
+    let user = User::new(user_id, user_name, true);
+    diesel::insert(&user)
+        .into(server::schema::users::table)
         .execute(connection)
-        .expect("Failed on insert user to db");
+        .or_else(|_| diesel::update(users.filter(id.eq(user_id)))
+            .set(active.eq(true))
+            .execute(connection))
+        .expect("Failed on insert or update user");
+}
+
+fn on_stop(components: &Components, user_id: i32) {
+    println!("on stop");
+
+    use server::schema::users::dsl::*;
+
+    let ref connection = *components.get_connection();
+    diesel::update(users.filter(id.eq(user_id)))
+        .set(active.eq(false))
+        .execute(connection)
+        .expect("Failed on update user");
 }
 
 fn on_subscribe(components: &Components, chat_id: i64, user_id: i32, message_iter: &mut SplitWhitespace) {
