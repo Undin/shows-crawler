@@ -1,13 +1,16 @@
 extern crate diesel;
 extern crate dotenv;
+extern crate itertools;
 extern crate server;
 extern crate threadpool;
 
 use dotenv::dotenv;
 use diesel::pg::upsert::*;
 use diesel::prelude::*;
+use itertools::Itertools;
 use server::Components;
 use server::models::{Show, Source, Subscription};
+use server::schema::*;
 use server::telegram_api::{Chat, Message, Update, User};
 use std::convert::Into;
 use std::str::SplitWhitespace;
@@ -54,6 +57,7 @@ fn process_update(components: Components, update: Update) {
                     Some("/start") => on_start(&components, chat_id, user_id, first_name),
                     Some("/subscribe") => on_subscribe(&components, chat_id, user_id, &mut iter),
                     Some("/sources") => on_sources_command(&components, chat_id),
+                    Some("/shows") => on_shows_command(&components, chat_id, &mut iter),
                     _ => {
                         println!("unknown command");
                     }
@@ -83,42 +87,35 @@ fn on_start(components: &Components, chat_id: i64, user_id: i32, first_name: Str
 fn on_subscribe(components: &Components, chat_id: i64, user_id: i32, message_iter: &mut SplitWhitespace) {
     println!("subscribe command");
 
-    use server::schema::shows::dsl::*;
-    use server::schema::sources::dsl::*;
-    use server::schema::subscriptions;
-
-    let maybe_source = message_iter.next();
-    let maybe_show = message_iter.next();
-    match (maybe_source, maybe_show) {
-        (Some(source_name), Some(show_name)) => {
+    let source_name = message_iter.next();
+    let show_title = message_iter.next();
+    match (source_name, show_title) {
+        (Some(source_name), Some(show_title)) => {
             let ref connection = *components.get_connection();
-            let query_result = sources
-                .filter(name.eq(source_name))
-                .first::<Source>(connection);
-            if let Ok(source) = query_result {
-                let query_result = shows
-                    .filter(title.eq(show_name).and(source_id.eq(source.id)))
-                    .first::<Show>(connection);
-                if let Ok(show) = query_result {
-                    let subscription = Subscription::new(show.id, user_id);
+            let query = sources::table.inner_join(shows::table)
+                .select(shows::id)
+                .filter(sources::name.eq(source_name).and(shows::title.eq(show_title)));
+            match query.first::<i64>(connection) {
+                Ok(show_id) => {
+                    let subscription = Subscription::new(show_id, user_id);
                     let insertion_result = diesel::insert(&subscription)
                         .into(subscriptions::table)
                         .execute(connection);
                     match insertion_result {
                         Ok(_) => {
-                            components.api.send_message(chat_id, &format!("subscription ({}, {}) created!", source_name, show_name));
+                            components.api.send_message(chat_id, &format!("subscription ({}, {}) created!", source_name, show_title));
                         },
                         Err(error) => println!("{}", error)
                     }
-                } else {
-                    components.api.send_message(chat_id, &format!("show '{}' not found.", show_name));
+                },
+                Err(error) => {
+                    components.api.send_message(chat_id, &format!("({}, {}) isn't found", source_name, show_title));
+                    println!("{}", error);
                 }
-            } else {
-                components.api.send_message(chat_id, &format!("source '{}' not found.", source_name));
             }
         },
         _ => {
-            components.api.send_message(chat_id, "Usage: /subscribe <source> <show_name>");
+            components.api.send_message(chat_id, "Usage: /subscribe <source> <show_title>");
         }
     }
 }
@@ -129,14 +126,35 @@ fn on_sources_command(components: &Components, chat_id: i64) {
     use server::schema::sources::dsl::*;
 
     let ref connection = *components.get_connection();
-    if let Ok(source_vec) = sources.load::<Source>(connection) {
-        let all_sources = source_vec.iter()
-            .map(|s| &s.name)
-            .fold(String::new(), |mut acc, x| {
-                acc.push_str(x);
-                acc.push('\n');
-                acc
-            });
+    let query = sources.select(name)
+        .order(name.asc());
+    if let Ok(source_names) = query.load::<String>(connection) {
+        let all_sources = source_names.iter().join("\n");
         components.api.send_message(chat_id, &all_sources);
+    }
+}
+
+fn on_shows_command(components: &Components, chat_id: i64, message_iter: &mut SplitWhitespace) {
+    println!("sources command");
+
+    let source_name = message_iter.next();
+    if let Some(source_name) = source_name {
+        let ref connection = *components.get_connection();
+        let query = sources::table.inner_join(shows::table)
+            .select(shows::title)
+            .filter(sources::name.eq(source_name))
+            .order(shows::title.asc());
+        match query.load::<String>(connection) {
+            Ok(ref titles) if titles.is_empty() => {
+                components.api.send_message(chat_id, "Nothing found");
+            },
+            Ok(titles) => {
+                let all_titles = titles.iter().join("\n");
+                components.api.send_message(chat_id, &all_titles);
+            },
+            Err(error) => println!("{}", error),
+        }
+    } else {
+        components.api.send_message(chat_id, "Usage: /shows <source>");
     }
 }
