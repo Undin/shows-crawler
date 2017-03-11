@@ -6,6 +6,7 @@ use schema::{users, sources, shows, subscriptions};
 pub struct User {
     pub id: i32,
     pub first_name: String,
+    pub active: bool
 }
 
 #[derive(new, Identifiable, Queryable, Insertable, Associations, Debug)]

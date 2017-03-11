@@ -76,7 +76,7 @@ fn on_start(components: &Components, chat_id: i64, user_id: i32, first_name: Str
     components.api.send_message(chat_id, &format!("Hello, {}!", &first_name));
     let ref connection = *components.connection_pool.get()
         .expect("Unable get connection from connection pool");
-    let user = User::new(user_id, first_name);
+    let user = User::new(user_id, first_name, true);
     diesel::insert(&user.on_conflict_do_nothing())
         .into(users::table)
         .execute(connection)
