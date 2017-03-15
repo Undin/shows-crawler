@@ -1,11 +1,14 @@
 CREATE TABLE users (
   id INTEGER PRIMARY KEY,
-  first_name TEXT NOT NULL
+  first_name TEXT NOT NULL,
+  chat_id BIGINT NOT NULL,
+  active BOOLEAN NOT NULL
 );
 
 CREATE TABLE sources (
   id BIGSERIAL PRIMARY KEY,
-  name TEXT NOT NULL UNIQUE
+  name TEXT NOT NULL UNIQUE,
+  url TEXT NOT NULL
 );
 
 CREATE TABLE shows (
@@ -25,6 +28,6 @@ CREATE TABLE subscriptions (
   PRIMARY KEY (show_id, user_id)
 );
 
-INSERT INTO sources (name) VALUES
-  ('lostfilm'),
-  ('newstudio');
+INSERT INTO sources (name, url) VALUES
+  ('lostfilm', 'http://www.lostfilm.tv/'),
+  ('newstudio', 'http://newstudio.tv/');

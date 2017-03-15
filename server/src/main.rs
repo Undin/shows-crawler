@@ -73,11 +73,11 @@ fn on_start(components: &Components, chat_id: i64, user_id: i32, user_name: Stri
     println!("on start");
 
     use server::models::User;
-    use server::schema::users::dsl::*;
+    use server::schema::users::dsl::{active, id, users};
 
     components.api.send_message(chat_id, &format!("Hello, {}!", &user_name));
     let ref connection = *components.get_connection();
-    let user = User::new(user_id, user_name, true);
+    let user = User::new(user_id, user_name, chat_id, true);
     diesel::insert(&user)
         .into(server::schema::users::table)
         .execute(connection)
