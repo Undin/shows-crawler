@@ -10,7 +10,7 @@ use itertools::Itertools;
 use server::Components;
 use server::models::{Show, Source, Subscription};
 use server::schema::*;
-use server::telegram_api::{Chat, Message, Update, User};
+use server::telegram_api::{Chat, ChatType, Message, Update, User};
 use std::convert::Into;
 use std::str::SplitWhitespace;
 use std::env;
@@ -45,7 +45,7 @@ fn process_update(components: Components, update: Update) {
     for message in update.message {
         match message {
             Message {
-                chat: Chat { id: chat_id, .. },
+                chat: Chat { id: chat_id, chat_type: ChatType::Private },
                 from: Some(User { id: user_id, first_name }),
                 text: Some(user_text), ..
             } => {
