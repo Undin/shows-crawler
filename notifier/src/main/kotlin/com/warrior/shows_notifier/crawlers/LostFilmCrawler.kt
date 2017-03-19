@@ -5,7 +5,7 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
-import com.warrior.shows_notifier.ShowEpisode
+import com.warrior.shows_notifier.entities.ShowEpisode
 import org.apache.logging.log4j.LogManager
 import org.jsoup.Jsoup
 import java.io.IOException

@@ -1,5 +1,7 @@
 package com.warrior.shows_notifier
 
+import com.warrior.shows_notifier.entities.Episode
+import com.warrior.shows_notifier.entities.Source
 import okhttp3.*
 import okhttp3.logging.HttpLoggingInterceptor
 import org.apache.logging.log4j.LogManager

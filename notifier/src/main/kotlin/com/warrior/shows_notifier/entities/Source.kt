@@ -1,4 +1,4 @@
-package com.warrior.shows_notifier
+package com.warrior.shows_notifier.entities
 
 /**
  * Created by warrior on 3/18/17.

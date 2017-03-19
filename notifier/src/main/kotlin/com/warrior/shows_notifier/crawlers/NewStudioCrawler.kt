@@ -1,6 +1,6 @@
 package com.warrior.shows_notifier.crawlers
 
-import com.warrior.shows_notifier.ShowEpisode
+import com.warrior.shows_notifier.entities.ShowEpisode
 import org.apache.logging.log4j.LogManager
 import org.jsoup.Jsoup
 import java.io.IOException

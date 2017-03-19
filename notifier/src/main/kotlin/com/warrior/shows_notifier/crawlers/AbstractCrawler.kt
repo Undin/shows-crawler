@@ -1,7 +1,5 @@
 package com.warrior.shows_notifier.crawlers
 
-import com.warrior.shows_notifier.Crawler
-
 /**
  * Created by warrior on 11/12/16.
  */

@@ -4,8 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import com.warrior.shows_notifier.crawlers.Crawler
 import com.warrior.shows_notifier.crawlers.LostFilmCrawler
 import com.warrior.shows_notifier.crawlers.NewStudioCrawler
+import com.warrior.shows_notifier.entities.Episode
+import com.warrior.shows_notifier.entities.Source
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Supplier
 import java.io.File
