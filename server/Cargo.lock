@@ -4,11 +4,11 @@ version = "0.1.0"
 dependencies = [
  "config 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "derive-new 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "diesel 0.11.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "diesel_codegen 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "diesel 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "diesel_codegen 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "itertools 0.5.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "r2d2 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "r2d2-diesel 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "r2d2-diesel 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "reqwest 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 0.9.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 0.9.7 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -94,7 +94,7 @@ dependencies = [
 
 [[package]]
 name = "diesel"
-version = "0.11.4"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "byteorder 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -103,11 +103,11 @@ dependencies = [
 
 [[package]]
 name = "diesel_codegen"
-version = "0.11.0"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "diesel 0.11.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "diesel_infer_schema 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "diesel 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "diesel_infer_schema 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "dotenv 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 0.3.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "syn 0.11.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -115,10 +115,10 @@ dependencies = [
 
 [[package]]
 name = "diesel_infer_schema"
-version = "0.11.0"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "diesel 0.11.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "diesel 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 0.3.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "syn 0.11.4 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -352,10 +352,10 @@ dependencies = [
 
 [[package]]
 name = "r2d2-diesel"
-version = "0.11.0"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "diesel 0.11.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "diesel 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "r2d2 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -658,9 +658,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum core-foundation-sys 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "065a5d7ffdcbc8fa145d6f0746f3555025b9097a9e9cda59f7467abae670c78d"
 "checksum crypt32-sys 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "e34988f7e069e0b2f3bfc064295161e489b2d4e04a2e4248fb94360cdf00b4ec"
 "checksum derive-new 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "b1e207fe066249393b8455730aeb6128ed4f48881754f996ea6e468a5cf5283b"
-"checksum diesel 0.11.4 (registry+https://github.com/rust-lang/crates.io-index)" = "2f872f59c19519db52506648a00d18ec5e3aa81eb99710f6837715eae41f3c76"
-"checksum diesel_codegen 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)" = "bf8115b73ca2640b8c6abdb0e34fd80f05cd8a7fee92067ba17d24448db8db5b"
-"checksum diesel_infer_schema 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)" = "5573f6506105cfbca35d69fccc9ab8d6dc41d54a58fe18c9f9011abe3284b4a4"
+"checksum diesel 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)" = "18af4b9d51ba507c688c3e75a14c38d21410f2c41e9423ae829db7c77ccee136"
+"checksum diesel_codegen 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)" = "e186258111a273698f926afae6f943a5b7bd2830bab3b60ecf14b02bd0a77714"
+"checksum diesel_infer_schema 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)" = "906d61691e013e00efdbff5269804b01e8f6547442ff5b841b8e37af94627374"
 "checksum dotenv 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "eea1395d2df3b5344dc577809296d9578303296e8d105c408aa80ed67d598ef1"
 "checksum dtoa 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)" = "80c8b71fd71146990a9742fc06dcbbde19161a267e0ad4e572c35162f4578c90"
 "checksum either 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)" = "63f94a35a9ca0d4178e85f0250373f2cea55c5d603e6993778d68a99b3d8071c"
@@ -692,7 +692,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum quote 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "4c5cf478fe1006dbcc72567121d23dbdae5f1632386068c5c86ff4f645628504"
 "checksum quote 0.3.12 (registry+https://github.com/rust-lang/crates.io-index)" = "e7b44fd83db28b83c1c58187159934906e5e955c812e211df413b76b03c909a5"
 "checksum r2d2 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)" = "4ecfed1b03be2e66624ec87cef173dad54253f25405bd3c918b321e4dda3ad32"
-"checksum r2d2-diesel 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)" = "1549332d11a91ac5b944a65fd59b9fe5ead091260556ae427b6919dadb08cace"
+"checksum r2d2-diesel 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)" = "4bea35c212f6cc1c408512a1289196299882950546b44449bb843f287f7a4402"
 "checksum rand 0.3.15 (registry+https://github.com/rust-lang/crates.io-index)" = "022e0636ec2519ddae48154b028864bdce4eaf7d35226ab8e65c611be97b189d"
 "checksum redox_syscall 0.1.16 (registry+https://github.com/rust-lang/crates.io-index)" = "8dd35cc9a8bdec562c757e3d43c1526b5c6d2653e23e2315065bc25556550753"
 "checksum regex 0.1.80 (registry+https://github.com/rust-lang/crates.io-index)" = "4fd4ace6a8cf7860714a2c2280d6c1f7e6a413486c13298bbc86fd3da019402f"

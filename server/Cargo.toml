@@ -6,11 +6,11 @@ authors = ["Undin <a.pendryak@yandex.ru>"]
 [dependencies]
 config = { version = "0.4", default-features = false, features = ["yaml"] }
 derive-new = "0.4"
-diesel = { version = "0.11", features = ["postgres"] }
-diesel_codegen = { version = "0.11", features = ["postgres"] }
+diesel = { version = "0.12", features = ["postgres"] }
+diesel_codegen = { version = "0.12", features = ["postgres"] }
 itertools = "0.5"
 r2d2 = "0.7"
-r2d2-diesel = "0.11"
+r2d2-diesel = "0.12"
 reqwest = "0.4"
 serde = "0.9"
 serde_derive = "0.9"
