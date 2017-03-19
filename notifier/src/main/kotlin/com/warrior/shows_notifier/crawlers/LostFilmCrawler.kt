@@ -6,9 +6,8 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 import com.warrior.shows_notifier.ShowEpisode
+import org.apache.logging.log4j.LogManager
 import org.jsoup.Jsoup
-import org.jsoup.nodes.Element
-import org.jsoup.select.Elements
 import java.io.IOException
 import java.util.*
 import java.util.regex.Pattern
@@ -16,81 +15,71 @@ import java.util.regex.Pattern
 /**
  * Created by warrior on 10/29/16.
  */
-class LostFilmCrawler(printLogs: Boolean = false) : AbstractCrawler(printLogs) {
+class LostFilmCrawler(
+        sourceId: Int,
+        private val contentUrl: String? = null
+) : AbstractCrawler(sourceId) {
 
-    private val rssPattern = Pattern.compile("(.*?) .*\\(S(\\d)+E(\\d+)\\)")
-    private val pagePattern = Pattern.compile("(\\d+)\\.(\\d+)")
+    private val logger = LogManager.getLogger(javaClass)
 
     override fun episodes(): List<ShowEpisode> = parsePage()
 
     private fun parsePage(): List<ShowEpisode> {
-        fun Element.isBrClearBoth(): Boolean = tagName() == "br" && attr("clear") == "both"
+        return try {
+            val document = Jsoup.connect(contentUrl ?: PAGE_URL).get()
+            return document.select("div.row")
+                    .asSequence()
+                    .flatMap { row ->
+                        val title = row.select("div.name-en").first()?.text() ?: return@flatMap emptySequence<ShowEpisode>()
+                        val href = row.select("a.comment-blue-box[href]").first() ?: return@flatMap emptySequence<ShowEpisode>()
+                        val url = href.attr("href")
+                        val matcher = URL_PATTERN.matcher(url)
+                        if (matcher.find()) {
+                            val season = matcher.group(1).toInt()
+                            val episodeNumber = matcher.group(2).toInt()
+                            val episode = ShowEpisode(title, season, episodeNumber)
+                            logger.debug("lostfilm: $episode")
+                            sequenceOf(episode)
+                        } else emptySequence()
 
-        val document = try {
-            Jsoup.connect("http://old.lostfilm.tv/browse.php").get()
+                    }.toList()
         } catch (e: IOException) {
-            e.printStackTrace()
-            return emptyList()
+            logger.error(e)
+            emptyList()
         }
-        val content = document.select("div.content_body").first()
-        val elements = content.children()
-
-        val groups = ArrayList<Elements>()
-        var currentGroup = Elements()
-
-        for (i in 1..elements.lastIndex) {
-            val prevElem = elements[i - 1]
-            val currentElem = elements[i]
-            if (prevElem.isBrClearBoth() && currentElem.isBrClearBoth()) {
-                groups += currentGroup
-                currentGroup = Elements()
-            } else {
-                currentGroup.add(prevElem)
-            }
-        }
-
-        val episodes = ArrayList<ShowEpisode>(groups.size)
-        groups.forEach { group ->
-            val firstDivText = group.select("div").first().text()
-            val matcher = pagePattern.matcher(firstDivText)
-            if (matcher.find()) {
-                val season = matcher.group(1).toInt()
-                val episodeNumber = matcher.group(2).toInt()
-                val img = group.select("img.category_icon[title]").first()
-                val showTitle = img.attr("title")
-                val episode = ShowEpisode(showTitle, season, episodeNumber)
-                episodes += episode
-                log("lostfilm: $episode")
-            }
-        }
-        return episodes
     }
 
     private fun parseRSS(): List<ShowEpisode> {
-        val page = try {
-            Jsoup.connect("http://www.lostfilm.tv/rssdd.xml").get().toString()
-        } catch (e: IOException) {
-            println(e.printStackTrace())
-            return emptyList()
-        }
+        return try {
+            val page = Jsoup.connect(contentUrl ?: RSS_URL).get().toString()
+            val mapper = XmlMapper()
+            val rss = mapper.readValue(page, RSS::class.java)
 
-        val mapper = XmlMapper()
-        val rss = mapper.readValue(page, RSS::class.java)
-
-        val episodeSet = HashSet<ShowEpisode>(rss.channel.items.size)
-        for (item in rss.channel.items) {
-            val matcher = rssPattern.matcher(item.title)
-            if (matcher.find()) {
-                val showTitle = matcher.group(1)
-                val season = matcher.group(2).toInt()
-                val episodeNumber = matcher.group(3).toInt()
-                val episode = ShowEpisode(showTitle, season, episodeNumber)
-                episodeSet += episode
-                log("lostfilm: $episode")
+            val episodeSet = HashSet<ShowEpisode>(rss.channel.items.size)
+            for (item in rss.channel.items) {
+                val matcher = RSS_PATTERN.matcher(item.title)
+                if (matcher.find()) {
+                    val showTitle = matcher.group(1)
+                    val season = matcher.group(2).toInt()
+                    val episodeNumber = matcher.group(3).toInt()
+                    val episode = ShowEpisode(showTitle, season, episodeNumber)
+                    episodeSet += episode
+                    logger.debug("lostfilm: $episode")
+                }
             }
+            episodeSet.toList()
+        } catch (e: IOException) {
+            logger.error(e)
+            emptyList()
         }
+    }
 
-        return episodeSet.toList()
+    companion object {
+        private const val PAGE_URL = "http://www.lostfilm.tv/new/"
+        private const val RSS_URL = "http://www.lostfilm.tv/rss.xml"
+
+        private val URL_PATTERN = Pattern.compile("season_(\\d+)/episode_(\\d+)")
+        private val RSS_PATTERN = Pattern.compile("(.*?) .*\\(S(\\d)+E(\\d+)\\)")
     }
 
     @JacksonXmlRootElement(localName = "rss")

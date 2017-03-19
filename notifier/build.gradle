@@ -1,7 +1,7 @@
 apply plugin: 'kotlin'
 apply plugin: 'com.github.johnrengelman.shadow'
 
-version = '0.2.1'
+version = '0.3'
 
 compileKotlin.kotlinOptions.jvmTarget = '1.8'
 
@@ -22,8 +22,14 @@ dependencies {
     compile libraries.jsoup
     compile libraries.jackson
     compile libraries.jacksonXml
+    compile libraries.jacksonYaml
     compile libraries.jacksonKotlin
     compile libraries.woodstox
 
-    compile libraries.commonsCli
+    compile libraries.postgres
+
+    compile libraries.okhttp
+    compile libraries.okhttpLogging
+
+    compile libraries.log4j2
 }

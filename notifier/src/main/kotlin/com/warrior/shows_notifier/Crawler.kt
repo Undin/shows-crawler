@@ -5,4 +5,5 @@ package com.warrior.shows_notifier
  */
 interface Crawler {
     fun episodes(): List<ShowEpisode>
+    fun sourceId(): Int
 }

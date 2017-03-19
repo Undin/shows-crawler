@@ -5,11 +5,6 @@ import com.warrior.shows_notifier.Crawler
 /**
  * Created by warrior on 11/12/16.
  */
-abstract class AbstractCrawler(private val printLogs: Boolean) : Crawler {
-
-    protected fun log(message: String) {
-        if (printLogs) {
-            println(message)
-        }
-    }
+abstract class AbstractCrawler(private val sourceId: Int) : Crawler {
+    override fun sourceId(): Int = sourceId
 }
