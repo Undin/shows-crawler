@@ -11,6 +11,7 @@ use server::Components;
 use server::models::{Show, Source, Subscription};
 use server::schema::*;
 use server::telegram_api::{Chat, ChatType, Message, Update, User};
+use std::cmp::min;
 use std::convert::Into;
 use std::str::SplitWhitespace;
 use std::env;
@@ -128,8 +129,11 @@ fn on_shows_command(components: &Components, chat_id: i64, message_iter: &mut Sp
                 components.api.send_message(chat_id, "Nothing found");
             },
             Ok(titles) => {
-                let all_titles = titles.iter().join("\n");
-                components.api.send_message(chat_id, &all_titles);
+                let max_lines = 100;
+                for i in 0 .. (titles.len() + max_lines - 1) / max_lines {
+                    let joined_titles = titles[max_lines * i .. min(max_lines * (i + 1), titles.len())].iter().join("\n");
+                    components.api.send_message(chat_id, &joined_titles);
+                }
             },
             Err(error) => println!("{}", error),
         }
