@@ -4,10 +4,10 @@ version = "0.1.0"
 authors = ["Undin <a.pendryak@yandex.ru>"]
 
 [dependencies]
+config = { version = "0.4", default-features = false, features = ["yaml"] }
 derive-new = "0.4"
 diesel = { version = "0.11", features = ["postgres"] }
 diesel_codegen = { version = "0.11", features = ["postgres"] }
-dotenv = "0.8"
 itertools = "0.5"
 r2d2 = "0.7"
 r2d2-diesel = "0.11"

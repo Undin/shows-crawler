@@ -1,10 +1,10 @@
+extern crate config;
 extern crate diesel;
-extern crate dotenv;
 extern crate itertools;
 extern crate server;
 extern crate threadpool;
 
-use dotenv::dotenv;
+use config::{Config, File, FileFormat};
 use diesel::prelude::*;
 use itertools::Itertools;
 use server::Components;
@@ -18,17 +18,23 @@ use std::env;
 use threadpool::ThreadPool;
 
 fn main() {
-    dotenv().ok();
-    let bot_token = env::var("BOT_TOKEN").expect("BOT_TOKEN variable must be set");
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let mut config = Config::new();
+    config.merge(File::new("notifier-server-config.yaml", FileFormat::Yaml))
+        .expect("can't find notifier-server-config.yaml file");
+
+    let bot_token = config.get_str("bot_token").expect("'bot_token' variable must be set");
+    let database_url = config.get_str("database_url").expect("'database_url' must be set");
+    let threads = config.get_int("threads").unwrap_or(1) as usize;
+    let update_timeout = config.get_int("update_timeout").unwrap_or(20) as u32;
+    let update_batch_size = config.get_int("update_batch_size").unwrap_or(100) as u32;
 
     let components = Components::new(bot_token, database_url);
-    let thread_pool = ThreadPool::new_with_name("thread-pool".into(), 4);
+    let thread_pool = ThreadPool::new_with_name("thread-pool".into(), threads);
 
     let mut update_id = 0i32;
 
     loop {
-        match components.api.get_updates(20, 1, update_id) {
+        match components.api.get_updates(update_timeout, update_batch_size, update_id) {
             Ok(update_response) => {
                 let updates: Vec<Update> = update_response.result;
                 for update in updates {
