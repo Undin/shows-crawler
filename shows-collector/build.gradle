@@ -11,8 +11,11 @@ dependencies {
     compile libraries.jacksonKotlin
     compile libraries.jacksonYaml
 
+    compile libraries.okhttp
+    compile libraries.okhttpLogging
     compile libraries.retrofit
     compile libraries.retrofitJackson
-    compile libraries.okhttpLogger
     compile libraries.jsoup
+
+    compile libraries.log4j2
 }

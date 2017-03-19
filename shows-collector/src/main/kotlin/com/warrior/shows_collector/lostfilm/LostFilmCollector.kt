@@ -5,6 +5,7 @@ import com.warrior.shows_collector.Show
 import com.warrior.shows_collector.ShowCollector
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
+import org.apache.logging.log4j.LogManager
 import retrofit2.Retrofit
 import retrofit2.converter.jackson.JacksonConverterFactory
 import java.io.IOException
@@ -15,10 +16,12 @@ import java.util.*
  */
 class LostFilmCollector(private val lostFilmId: Int) : ShowCollector {
 
+    private val logger = LogManager.getLogger(javaClass)
+
     private val api: LostFilmApi
 
     init {
-        val logging = HttpLoggingInterceptor(HttpLoggingInterceptor.Logger(::println))
+        val logging = HttpLoggingInterceptor(HttpLoggingInterceptor.Logger(logger::info))
         logging.level = HttpLoggingInterceptor.Level.BODY
         val client = OkHttpClient.Builder()
                 .addInterceptor(logging)
@@ -53,7 +56,7 @@ class LostFilmCollector(private val lostFilmId: Int) : ShowCollector {
 
                 }
             } catch (e: IOException) {
-                e.printStackTrace()
+                logger.error(e)
                 attempts++
             }
             if (attempts > 5) {
