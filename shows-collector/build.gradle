@@ -18,4 +18,7 @@ dependencies {
     compile libraries.jsoup
 
     compile libraries.log4j2
+
+    testCompile libraries.junit
+    testCompile libraries.mockwebserver
 }

@@ -1,0 +1,2540 @@
+
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>NewStudio</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="description" content="">
+	<link rel="alternate" type="application/rss+xml" title="RSS" href="/rss.php">
+	<link rel="stylesheet" href="/templates/newstudio/css/newstudio.css" type="text/css" />
+	<script src="/templates/newstudio/js/jquery-latest.js"></script>
+	<script src="/templates/newstudio/js/jquery.autocomplete.js"></script>
+	<script src="/templates/newstudio/js/jquery.cookie.js"></script>
+
+	<script type="text/javascript">
+        $(function(){
+            $(".search-query").autocomplete({
+                serviceUrl: '/autocomplete.php',
+                minChars: 2,
+                delimiter: /(;)\s*/,
+                maxHeight: 400,
+                width: 640,
+                zIndex: 9999,
+                deferRequestBy: 300,
+                onSelect: function(data, value){
+                    window.location = '/'+value;
+                }
+            });
+        })
+	</script>
+
+	<script type="text/javascript" src="/misc/js/main.js?v=1"></script>
+	<script type="text/javascript" src="/misc/js/bbcode.js?v=1"></script>
+	<script type="text/javascript">
+        var postImg_MaxWidth = screen.width - 202;
+        var postImgAligned_MaxWidth = Math.round(screen.width/3);
+        var attachImg_MaxWidth = screen.width - 280;
+        var ExternalLinks_InNewWindow = '1';
+        var hidePostImg = false;
+
+        function copyText_writeLink(node)
+        {
+            if (!is_ie) return;
+            document.write('<p style="float: right;"><a class="txtb" onclick="if (ie_copyTextToClipboard('+node+')) alert(\'Код скопирован в буфер обмена\'); return false;" href="#">скопировать в буфер обмена</a></p>');
+        }
+        function initPostBBCode(context)
+        {
+            $('span.post-hr', context).html('<hr align="left" />');
+            initQuotes(context);
+            initExternalLinks(context);
+            initPostImages(context);
+            initSpoilers(context);
+        }
+        function initQuotes(context)
+        {
+            $('div.q', context).each(function(){
+                var $q = $(this);
+                var name = $(this).attr('head');
+                $q.before('<div class="q-head">'+ (name ? '<b>'+name+'</b> писал(а):' : '<b>Цитата</b>') +'</div>');
+            });
+        }
+        function initPostImages(context)
+        {
+            if (hidePostImg) return;
+            var $in_spoilers = $('div.sp-body var.postImg', context);
+            $('var.postImg', context).not($in_spoilers).each(function(){
+                var $v = $(this);
+                var src = $v.attr('title');
+                var $img = $('<img src="'+ src +'" class="'+ $v.attr('className') +'" alt="pic" />');
+                $img = fixPostImage($img);
+                var maxW = ($v.hasClass('postImgAligned')) ? postImgAligned_MaxWidth : postImg_MaxWidth;
+                $img.bind('click', function(){ return imgFit(this, maxW); });
+                if (user.opt_js.i_aft_l) {
+                    $('#preload').append($img);
+                    var loading_icon = '<a href="'+ src +'" target="_blank"><img src="images/pic_loading.gif" alt="" /></a>';
+                    $v.html(loading_icon);
+                    if ($.browser.msie) {
+                        $v.after('<wbr>');
+                    }
+                    $img.one('load', function(){
+                        imgFit(this, maxW);
+                        $v.empty().append(this);
+                    });
+                }
+                else {
+                    $img.one('load', function(){ imgFit(this, maxW) });
+                    $v.empty().append($img);
+                    if ($.browser.msie) {
+                        $v.after('<wbr>');
+                    }
+                }
+            });
+        }
+        function initSpoilers(context)
+        {
+            $('div.sp-body', context).each(function(){
+                var $sp_body = $(this);
+                var name = $.trim(this.title) || 'Скрытый текст';
+                this.title = '';
+                var $sp_head = $('<div class="sp-head folded clickable">'+ name +'</div>');
+                $sp_head.insertBefore($sp_body).click(function(e){
+                    if (!$sp_body.hasClass('inited')) {
+                        initPostImages($sp_body);
+                        var $sp_fold_btn = $('<div class="sp-fold clickable">[Свернуть]</div>').click(function(){
+                            $.scrollTo($sp_head, { duration:200, axis:'y', offset:-200 });
+                            $sp_head.click().animate({opacity: 0.1}, 500).animate({opacity: 1}, 700);
+                        });
+                        $sp_body.prepend('<div class="clear"></div>').append('<div class="clear"></div>').append($sp_fold_btn).addClass('inited');
+                    }
+                    if (e.shiftKey) {
+                        e.stopPropagation();
+                        e.shiftKey = false;
+                        var fold = $(this).hasClass('unfolded');
+                        $('div.sp-head', $($sp_body.parents('td')[0])).filter( function(){ return $(this).hasClass('unfolded') ? fold : !fold } ).click();
+                    }
+                    else {
+                        $(this).toggleClass('unfolded');
+                        $sp_body.slideToggle('fast');
+                    }
+                });
+            });
+        }
+        function initExternalLinks(context)
+        {
+            var context = context || 'body';
+            if (ExternalLinks_InNewWindow) {
+                $("a.postLink:not([href*='"+ window.location.hostname +"/'])", context).attr({ target: '_blank' });
+                //$("a.postLink:not([@href*='"+ window.location.hostname +"/'])", context).replaceWith('<span style="color: red;">Ссылки запрещены</span>');
+            }
+        }
+        function fixPostImage ($img)
+        {
+            var banned_image_hosts = /imagebanana|hidebehind/i;  // imageshack
+            var src = $img[0].src;
+            if (src.match(banned_image_hosts)) {
+                $img.wrap('<a href="'+ this.src +'" target="_blank"></a>').attr({ src: "/tr_oops.gif", title: "Прочтите правила размещения скриншотов!" });
+            }
+            return $img;
+        }
+        $(document).ready(function(){
+            $('div.post_wrap, div.signature').each(function(){ initPostBBCode( $(this) ) });
+        });
+	</script>
+	<script type="text/javascript">
+        var BB_ROOT       = "./";
+        var cookieDomain  = "newstudio.tv";
+        var cookiePath    = "/";
+        var cookieSecure  = 0;
+        var cookiePrefix  = "bb_";
+        var LOGGED_IN     = 1;
+        var InfoWinParams = 'HEIGHT=510,resizable=yes,WIDTH=780';
+
+        var user = {
+            opt_js: {"only_new":0,"h_av":0,"h_rnk_i":0,"h_post_i":0,"h_smile":0,"h_sig":0,"sp_op":0,"tr_t_ax":0,"tr_t_t":0,"hl_tr":1,"i_aft_l":0},
+
+            set: function(opt, val, days, reload) {
+                this.opt_js[opt] = val;
+                setCookie('opt_js', $.toJSON(this.opt_js), days);
+                if (reload) {
+                    window.location.reload();
+                }
+            }
+        }
+        $(document).ready(function(){
+            $("div.jumpbox").html('\
+  		<span id="jumpbox-container"> \
+  		<select id="jumpbox"> \
+  			<option id="jumpbox-title" value="-1">&nbsp;»» Выберите форум для перехода &nbsp;</option> \
+  		</select> \
+  		</span> \
+  		<input id="jumpbox-submit" type="button" class="btn" style="height:30px;" value="Перейти" /> \
+  	');
+            $('#jumpbox-container').one('click', function(){
+                $('#jumpbox-title').html('&nbsp;&nbsp; Загружается… ... &nbsp;');
+                var jumpbox_src = './ajax/html/' + (1 ? 'jumpbox_user.html' : 'jumpbox_guest.html');
+                $(this).load(jumpbox_src);
+                $('#jumpbox-submit').click(function(){ window.location.href='./viewforum.php?f='+$('#jumpbox').val(); });
+            });
+        });
+
+        var ajax = new Ajax('./ajax.php', 'POST', 'json');
+
+        function getElText (e)
+        {
+            var t = '';
+            if (e.textContent !== undefined) { t = e.textContent; } else if (e.innerText !== undefined) { t = e.innerText; } else { t = jQuery(e).text(); }
+            return t;
+        }
+        function escHTML (txt)
+        {
+            return txt.replace(/</g, '&lt;');
+        }
+	</script>
+</head>
+<body style="background: url('/images/fones/fonePic1489901247.jpg') no-repeat scroll 50% 0 #000000;padding-top:420px;">
+
+<style>
+	.up-button {
+		display: none;
+		position:fixed;
+		bottom: 4px;
+		background-color:#FBF9E4;
+		width:35px;
+		line-height:30px;
+		text-align:center;
+		font-size:1.4em;
+		text-decoration:none;
+		opacity:0.7;
+		z-index:5
+	}
+	.up-button:hover{
+		opacity: 1;
+	}
+	.up-left{
+		left:0;
+		border-radius:0 4px 4px 0;
+
+	}
+	.up-right{
+		right:0;
+		border-radius:4px 0 0 4px;
+
+	}
+
+</style>
+<script type="text/javascript">
+    jQuery(function($) {
+
+        var upperLimit = 100, scrollElem = $(".up-button"), scrollSpeed = 500;
+        $(window).scroll(function () {
+            var scrollTop = $(document).scrollTop();
+            if ( scrollTop > upperLimit ) {
+                $(scrollElem).stop().fadeTo(300, 1); // fade back in
+            } else {
+                $(scrollElem).stop().fadeTo(300, 0); // fade out
+            }
+        }).scroll();
+        $(scrollElem).click(function(){
+            $('html, body').animate({scrollTop:0}, scrollSpeed); return false;
+        });
+
+
+    });
+</script>
+<a href="#" class="up-button up-left"><img src="/images/up_arrow.png" style="width: 17px;height: 17px;z-index:2;"></a>
+<a href="#" class="up-button up-right"><img src="/images/up_arrow.png" style="width: 17px;height: 17px;z-index:2;"></a>
+
+<div id="wrap">
+	<div class="container-fluid">
+		<div class="navbar navbar-inverse">
+			<div class="navbar-inner">
+				<div class="container-fluid">
+					<!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+					<a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</a>
+					<a class="brand" href="/">NewStudio.TV</a>
+					<div class="nav-collapse collapse">
+
+						<!--<ul class="nav">
+                            <li class="active"><a href="#"><i class="icon-film"></i> трекер</a></li>
+                        </ul>-->
+						<div class="nav pull-right">
+
+							<div class="btn-group">
+								<a class="btn btn-inverse" href="/profile.php?mode=viewprofile&amp;u=138436">Warrior</a>
+								<a class="btn btn-inverse dropdown-toggle" data-toggle="dropdown" href="#"><span class="icon-caret-down"></span></a>
+								<ul class="dropdown-menu">
+									<li><a id="profile" href="/profile.php?mode=viewprofile&amp;u=138436"><i class="icon-user-md"></i> профиль</a></li>
+									<li><a id="privmsgl" href="/privmsg.php"><i class="icon-comments"></i> сообщения</a></li>
+									<li><a id="logout" href="/login.php?logout=1"><i class="icon-signout"></i> Выход</a></li>
+								</ul>
+							</div>
+						</div>
+						<ul class="nav pull-right">
+							<li><a href="/tracker.php"><i class="icon-film"></i> Релизы</a></li>
+							<li><a href="/forum.php"><i class="icon-comments-alt"></i> Форум</a></li>
+						</ul>
+						<form class="navbar-search pull-right" action="/tracker.php#results" method="post">
+							<input type="hidden" name="max" value="1">
+							<input type="hidden" name="to" value="1">
+							<input name="nm" class="search-query" type="text" placeholder="Найти сериал" style="width:310px;">&nbsp;
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div style="text-align:center;text-align:middle;margin:0 auto;background:#dbdbdb;">
+		<br><center><object width="728" height="90">
+		<param name="movie" value="menu.swf">
+		<embed src="menu.swf" width="728" height="90">
+		</embed>
+	</object></center><br>        </div>
+
+
+	<div class="container-fluid bg-img">
+
+		<div class="row-fluid">
+			<div  id="sideLeftW" class="span9">
+				<div id="sideLeft">
+
+
+
+
+
+					<div style="margin-left:5px;" class="accordion-group">
+						<div class="accordion-heading">
+							<h5 class="accordion-toggle">
+								<a href="viewforum.php?f=465">Игра престолов</a>
+							</h5>
+						</div>
+						<div class="accordion-body collapse in">
+							<div class="accordion-inner">
+								<p class="small" id="moderators"><a style="text-decoration: none;" href="#">Модераторы</a></p>
+								<p class="small"></p>
+
+								<script type="text/javascript">
+                                    $(document).ready(function(){
+                                        $("#moderators a").one('click', function(){
+                                            $('#moderators').html($('#moderators').text());
+                                            ajax.index_data();
+                                            return false;
+                                        });
+                                    });
+                                    ajax.index_data = function() {
+                                        ajax.exec({
+                                            action   : 'index_data',
+                                            mode     : 'get_forum_mods',
+                                            forum_id : 465                    });
+                                    };
+                                    ajax.callback.index_data = function(data) {
+                                        $('#moderators').append(data.html);
+                                    };
+								</script>
+
+								<ul class="breadcrumb">
+									<li class="pull-right">
+										<a href="posting.php?mode=new_rel&amp;f=465" title="Создать раздачу"> Создать тему</a>
+									</li>
+									<li><a href="#"><a href="/forum.php">Главная форума</a> <span class="divider">/</span></li>
+									<li><a href="viewforum.php?f=465"  class="active">Игра престолов</a></li>
+								</ul>
+
+
+								<div class="row-fluid morerator-l">
+									<div class="span4">
+										<a href="search.php?uid=138436&f=465">Мои сообщения</a> &nbsp;<span style="color:#CDCDCD;">|</span>&nbsp;
+										<a class="menu-root" href="#only-new-options">Опции показа</a>
+									</div>
+								</div>
+
+								<div class="well-small">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">Темы</div>
+										<div class="span1 pagination-centered">Торрент</div>
+										<div class="span2 pagination-centered">Ответов</div>
+										<div class="span2">Посл. сообщение</div>
+									</div>
+								</div>
+
+								<div id="19591" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19591">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19591" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19591" href="./viewtopic.php?t=19591" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 10) / Game of Thrones (2016) HDTV 1080p | Финал сезона</b></a>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">8</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">0</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19481" class="small" style="text-decoration: none">4.04&nbsp;GB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">12</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">5787</span>
+											<div class="lcompl_cnt">
+												<b>1325</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-07-24 08:33</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=269344"><span title="Пользователь" class="colorUser">new_nik_user</span></a>				                         	<a href="./viewtopic.php?p=81458#81458"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div id="19590" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19590">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19590" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19590" href="./viewtopic.php?t=19590" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 10) / Game of Thrones (2016) HDTV 720p | Финал сезона</b></a>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">3</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">0</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19480" class="small" style="text-decoration: none">1.3&nbsp;GB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">1</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">1940</span>
+											<div class="lcompl_cnt">
+												<b>904</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-06-29 02:30</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=50388"><span title="Пользователь" class="colorUser">Temporale</span></a>				                         	<a href="./viewtopic.php?p=79981#79981"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div id="19589" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19589">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19589" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19589" href="./viewtopic.php?t=19589" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 10) / Game of Thrones (2016) HDTVRip | Финал сезона</b></a>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">8</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">0</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19479" class="small" style="text-decoration: none">799&nbsp;MB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">2</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">3535</span>
+											<div class="lcompl_cnt">
+												<b>1523</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-06-28 22:56</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=133182"><span title="Пользователь" class="colorUser">Faina_Alex</span></a>				                         	<a href="./viewtopic.php?p=79957#79957"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div id="19500" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19500">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19500" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19500" href="./viewtopic.php?t=19500" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 9) / Game of Thrones (2016) WEBDL 1080p</b></a>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">4</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">0</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19390" class="small" style="text-decoration: none">2.35&nbsp;GB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">0</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">2154</span>
+											<div class="lcompl_cnt">
+												<b>791</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-06-22 22:58</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=60"><span title="Администратор" class="colorAdmin">Cherry</span></a>				                         	<a href="./viewtopic.php?p=79584#79584"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div id="19499" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19499">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19499" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19499" href="./viewtopic.php?t=19499" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 9) / Game of Thrones (2016) WEBDL 720p</b></a>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">1</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">0</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19389" class="small" style="text-decoration: none">1.96&nbsp;GB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">0</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">911</span>
+											<div class="lcompl_cnt">
+												<b>421</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-06-22 22:57</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=60"><span title="Администратор" class="colorAdmin">Cherry</span></a>				                         	<a href="./viewtopic.php?p=79583#79583"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div id="19498" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19498">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19498" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19498" href="./viewtopic.php?t=19498" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 9) / Game of Thrones (2016) WEBDLRip</b></a>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">3</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">0</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19388" class="small" style="text-decoration: none">700&nbsp;MB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">0</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">1670</span>
+											<div class="lcompl_cnt">
+												<b>1154</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-06-22 22:57</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=60"><span title="Администратор" class="colorAdmin">Cherry</span></a>				                         	<a href="./viewtopic.php?p=79582#79582"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div id="19405" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19405">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19405" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19405" href="./viewtopic.php?t=19405" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 8) / Game of Thrones (2016) HDTV 1080p</b></a>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">4</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">0</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19292" class="small" style="text-decoration: none">3.93&nbsp;GB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">1</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">3008</span>
+											<div class="lcompl_cnt">
+												<b>1562</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-06-14 19:24</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=138206"><span title="Пользователь" class="colorUser">emptyalias</span></a>				                         	<a href="./viewtopic.php?p=79140#79140"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div id="19404" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19404">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19404" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19404" href="./viewtopic.php?t=19404" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 8) / Game of Thrones (2016) HDTV 720p</b></a>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">3</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">0</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19291" class="small" style="text-decoration: none">1.37&nbsp;GB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">0</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">1495</span>
+											<div class="lcompl_cnt">
+												<b>1008</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-06-14 04:24</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=60"><span title="Администратор" class="colorAdmin">Cherry</span></a>				                         	<a href="./viewtopic.php?p=79084#79084"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div id="19403" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19403">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19403" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19403" href="./viewtopic.php?t=19403" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 8) / Game of Thrones (2016) HDTVRip</b></a>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">2</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">0</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19290" class="small" style="text-decoration: none">700&nbsp;MB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">1</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">2546</span>
+											<div class="lcompl_cnt">
+												<b>2018</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-06-14 19:47</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=133182"><span title="Пользователь" class="colorUser">Faina_Alex</span></a>				                         	<a href="./viewtopic.php?p=79142#79142"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div id="19362" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19362">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19362" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19362" href="./viewtopic.php?t=19362" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 7) / Game of Thrones (2016) WEBDL 1080p</b></a>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">3</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">0</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19250" class="small" style="text-decoration: none">1.98&nbsp;GB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">3</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">2625</span>
+											<div class="lcompl_cnt">
+												<b>898</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-06-10 19:12</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=73327"><span title="Пользователь" class="colorUser">kseo</span></a>				                         	<a href="./viewtopic.php?p=78994#78994"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div id="19361" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19361">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19361" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19361" href="./viewtopic.php?t=19361" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 7) / Game of Thrones (2016) WEBDL 720p</b></a>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">1</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">0</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19249" class="small" style="text-decoration: none">1.65&nbsp;GB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">0</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">1619</span>
+											<div class="lcompl_cnt">
+												<b>500</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-06-09 13:44</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=60"><span title="Администратор" class="colorAdmin">Cherry</span></a>				                         	<a href="./viewtopic.php?p=78861#78861"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div id="19360" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19360">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19360" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19360" href="./viewtopic.php?t=19360" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 7) / Game of Thrones (2016) WEBDLRip</b></a>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">1</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">2</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19248" class="small" style="text-decoration: none">700&nbsp;MB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">2</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">2061</span>
+											<div class="lcompl_cnt">
+												<b>1218</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-06-10 11:21</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=210288"><span title="Пользователь" class="colorUser">Рустем</span></a>				                         	<a href="./viewtopic.php?p=78949#78949"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div id="19315" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19315">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19315" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19315" href="./viewtopic.php?t=19315" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 6) / Game of Thrones (2016) WEBDL 1080p</b></a>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">3</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">0</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19202" class="small" style="text-decoration: none">1.94&nbsp;GB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">3</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">3973</span>
+											<div class="lcompl_cnt">
+												<b>990</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-06-02 07:44</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=16520"><span title="Администратор" class="colorAdmin">PtyZa</span></a>				                         	<a href="./viewtopic.php?p=78649#78649"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div id="19314" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19314">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19314" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19314" href="./viewtopic.php?t=19314" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 6) / Game of Thrones (2016) WEBDL 720p</b></a>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">4</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">0</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19201" class="small" style="text-decoration: none">1.67&nbsp;GB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">0</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">2009</span>
+											<div class="lcompl_cnt">
+												<b>732</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-06-01 01:56</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=60"><span title="Администратор" class="colorAdmin">Cherry</span></a>				                         	<a href="./viewtopic.php?p=78616#78616"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div id="19313" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19313">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19313" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19313" href="./viewtopic.php?t=19313" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 6) / Game of Thrones (2016) WEBDLRip</b></a>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">3</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">0</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19200" class="small" style="text-decoration: none">700&nbsp;MB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">0</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">2415</span>
+											<div class="lcompl_cnt">
+												<b>1438</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-06-01 01:56</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=60"><span title="Администратор" class="colorAdmin">Cherry</span></a>				                         	<a href="./viewtopic.php?p=78615#78615"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div id="19247" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19247">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19247" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19247" href="./viewtopic.php?t=19247" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 5) / Game of Thrones (2016) HDTV 1080p</b></a>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">3</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">1</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19128" class="small" style="text-decoration: none">3.94&nbsp;GB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">6</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">3175</span>
+											<div class="lcompl_cnt">
+												<b>1392</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-05-26 02:04</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=1437"><span title="Пользователь" class="colorUser">kimon</span></a>				                         	<a href="./viewtopic.php?p=78361#78361"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div id="19246" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19246">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19246" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19246" href="./viewtopic.php?t=19246" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 5) / Game of Thrones (2016) HDTV 720p</b></a>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">3</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">0</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19127" class="small" style="text-decoration: none">1.43&nbsp;GB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">0</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">1657</span>
+											<div class="lcompl_cnt">
+												<b>981</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-05-24 21:42</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=60"><span title="Администратор" class="colorAdmin">Cherry</span></a>				                         	<a href="./viewtopic.php?p=78209#78209"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div id="19245" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19245">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19245" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19245" href="./viewtopic.php?t=19245" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 5) / Game of Thrones (2016) HDTVRip</b></a>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">3</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">0</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19126" class="small" style="text-decoration: none">700&nbsp;MB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">4</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">2575</span>
+											<div class="lcompl_cnt">
+												<b>1747</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-05-26 08:02</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=16520"><span title="Администратор" class="colorAdmin">PtyZa</span></a>				                         	<a href="./viewtopic.php?p=78376#78376"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div id="19236" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19236">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19236" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19236" href="./viewtopic.php?t=19236" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 4) / Game of Thrones (2016) WEBDL 1080p</b></a>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">2</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">1</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19117" class="small" style="text-decoration: none">2.31&nbsp;GB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">2</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">2388</span>
+											<div class="lcompl_cnt">
+												<b>592</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-05-24 14:33</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=229003"><span title="Пользователь" class="colorUser">Rob_zombie</span></a>				                         	<a href="./viewtopic.php?p=78174#78174"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div id="19235" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19235">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19235" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19235" href="./viewtopic.php?t=19235" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 4) / Game of Thrones (2016) WEBDL 720p</b></a>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">3</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">0</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19116" class="small" style="text-decoration: none">1.94&nbsp;GB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">0</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">1458</span>
+											<div class="lcompl_cnt">
+												<b>507</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-05-24 13:49</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=60"><span title="Администратор" class="colorAdmin">Cherry</span></a>				                         	<a href="./viewtopic.php?p=78170#78170"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div id="19234" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19234">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19234" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19234" href="./viewtopic.php?t=19234" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 4) / Game of Thrones (2016) WEBDLRip</b></a>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">0</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">0</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19115" class="small" style="text-decoration: none">700&nbsp;MB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">0</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">1166</span>
+											<div class="lcompl_cnt">
+												<b>832</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-05-24 13:49</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=60"><span title="Администратор" class="colorAdmin">Cherry</span></a>				                         	<a href="./viewtopic.php?p=78169#78169"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div id="19233" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19233">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19233" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19233" href="./viewtopic.php?t=19233" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 3) / Game of Thrones (2016) WEBDL 1080p</b></a>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">2</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">0</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19114" class="small" style="text-decoration: none">2.06&nbsp;GB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">1</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">2151</span>
+											<div class="lcompl_cnt">
+												<b>438</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-05-24 12:33</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=248149"><span title="Пользователь" class="colorUser">sawyer4</span></a>				                         	<a href="./viewtopic.php?p=78167#78167"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div id="19232" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19232">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19232" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19232" href="./viewtopic.php?t=19232" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 3) / Game of Thrones (2016) WEBDL 720p</b></a>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">3</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">0</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19113" class="small" style="text-decoration: none">1.69&nbsp;GB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">0</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">1374</span>
+											<div class="lcompl_cnt">
+												<b>333</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-05-24 06:15</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=60"><span title="Администратор" class="colorAdmin">Cherry</span></a>				                         	<a href="./viewtopic.php?p=78150#78150"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div id="19231" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19231">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19231" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19231" href="./viewtopic.php?t=19231" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 3) / Game of Thrones (2016) WEBDLRip</b></a>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">0</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">0</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19112" class="small" style="text-decoration: none">700&nbsp;MB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">0</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">1121</span>
+											<div class="lcompl_cnt">
+												<b>590</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-05-24 06:15</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=60"><span title="Администратор" class="colorAdmin">Cherry</span></a>				                         	<a href="./viewtopic.php?p=78149#78149"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div id="19230" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19230">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19230" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19230" href="./viewtopic.php?t=19230" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 2) / Game of Thrones (2016) WEBDL 1080p</b></a>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">2</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">0</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19111" class="small" style="text-decoration: none">2.09&nbsp;GB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">0</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">1926</span>
+											<div class="lcompl_cnt">
+												<b>394</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-05-24 04:06</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=60"><span title="Администратор" class="colorAdmin">Cherry</span></a>				                         	<a href="./viewtopic.php?p=78147#78147"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div id="19229" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19229">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19229" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19229" href="./viewtopic.php?t=19229" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 2) / Game of Thrones (2016) WEBDL 720p</b></a>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">4</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">0</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19110" class="small" style="text-decoration: none">1.76&nbsp;GB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">0</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">1190</span>
+											<div class="lcompl_cnt">
+												<b>307</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-05-24 04:06</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=60"><span title="Администратор" class="colorAdmin">Cherry</span></a>				                         	<a href="./viewtopic.php?p=78146#78146"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div id="19228" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19228">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19228" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19228" href="./viewtopic.php?t=19228" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 2) / Game of Thrones (2016) WEBDLRip</b></a>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">1</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">0</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19109" class="small" style="text-decoration: none">700&nbsp;MB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">0</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">1407</span>
+											<div class="lcompl_cnt">
+												<b>572</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-05-24 04:06</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=60"><span title="Администратор" class="colorAdmin">Cherry</span></a>				                         	<a href="./viewtopic.php?p=78145#78145"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div id="19224" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19224">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19224" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19224" href="./viewtopic.php?t=19224" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 1) / Game of Thrones (2016) WEBDL 1080p</b></a>
+												<span class="topicPG">[<img src="./templates/newstudio/images/icon_minipost.gif" class="icon1" alt="Перейти" title="Страницы" />Стр. <a href="viewtopic.php?t=19224" class="topicPG">1</a>, <a href="viewtopic.php?t=19224&amp;start=15" class="topicPG">2</a> ]</span>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">2</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">0</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19105" class="small" style="text-decoration: none">1.99&nbsp;GB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">18</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">5144</span>
+											<div class="lcompl_cnt">
+												<b>437</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-05-25 00:05</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=100526"><span title="Пользователь" class="colorUser">tereus</span></a>				                         	<a href="./viewtopic.php?p=78231#78231"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div id="19223" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19223">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19223" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19223" href="./viewtopic.php?t=19223" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 1) / Game of Thrones (2016) WEBDL 720p</b></a>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">3</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">0</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19104" class="small" style="text-decoration: none">1.62&nbsp;GB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">2</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">1805</span>
+											<div class="lcompl_cnt">
+												<b>320</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-09-05 00:02</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=269558"><span title="Пользователь" class="colorUser">kobrets</span></a>				                         	<a href="./viewtopic.php?p=83154#83154"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div id="19222" class="well well-small topic_id">
+									<div class="row-fluid" style="font-weight:bold;">
+										<div class="span7">
+											<div class="topic-icon pull-left" id="status-19222">
+												<i class="icon-download-alt"></i>							</div>
+											<div class="topic-list">
+												<span id="status-19222" title="проверено"><i class="icon-certificate"></i></span>&#0183;
+												<img src="images/tor_gold.gif" width="16" height="15" title="Золото" alt="" />&nbsp;<a id="tt-19222" href="./viewtopic.php?t=19222" class="torTopic tt-text"><b>Игра Престолов (Сезон 6, Серия 1) / Game of Thrones (2016) WEBDLRip</b></a>
+
+											</div>
+										</div>
+										<div class="span1 pagination-centered">
+											<div title="Скачать .torrent">
+												<div>
+													<span class="seedmed" title="Seeders">1</span>
+													<span class="small">|</span>
+													<span class="leechmed" title="Leechers">1</span>
+												</div>
+												<div>
+													<a href="./download.php?id=19103" class="small" style="text-decoration: none">700&nbsp;MB</a>
+
+												</div>
+											</div>
+										</div>
+										<div class="span2 pagination-centered">
+											<span class="lreplies" title="Ответов">6</span>
+											<span class="small"> | </span>
+											<span class="lviews" title="Просм.">2999</span>
+											<div class="lcompl_cnt">
+												<b>736</b>
+											</div>
+										</div>
+										<div class="span2">
+											<div class="lastpostt">2016-05-24 03:49</div>
+											<div class="icon-user">
+												<a href="http://newstudio.tv/profile.php?mode=viewprofile&amp;u=51396"><span title="Пользователь" class="colorUser">Шамрок</span></a>				                         	<a href="./viewtopic.php?p=78143#78143"><img src="./templates/newstudio/images/icon_latest_reply.gif" class="icon2" alt="Последнее" title="Посмотреть последнее сообщение" /></a>
+											</div>
+										</div>
+									</div>
+								</div>
+
+								<form method="post" action="viewforum.php?f=465&amp;start=0" class="input-append input-prepend">
+									<span class="add-on">Показать: </span>
+
+									<select  name="topicdays" id="topicdays">
+										<option selected="selected"  value="0">&nbsp;все сообщения&nbsp;</option>
+										<option value="1">&nbsp;за последний день&nbsp;</option>
+										<option value="7">&nbsp;за последние 7 дней&nbsp;</option>
+										<option value="14">&nbsp;за последние 2 недели&nbsp;</option>
+										<option value="30">&nbsp;за последний месяц&nbsp;</option>
+										<option value="90">&nbsp;за последние 3 месяца&nbsp;</option>
+										<option value="180">&nbsp;за последние 6 месяцев&nbsp;</option>
+										<option value="364">&nbsp;за последний год&nbsp;</option>
+									</select>
+									&nbsp;Упорядочить по:&nbsp;<select name="sort"><option value="0">Посл. сообщение</option><option value="1">Название темы</option><option value="2" selected="selected">Время размещения</option></select><select name="order"><option value="0" selected="selected">по убыванию</option><option value="1">по возрастанию</option></select>&nbsp;				    <input  class="btn" style="height:30px;" type="submit" value="Перейти" />
+								</form>
+
+
+
+								<ul class="breadcrumb">
+									<li class="pull-right">
+										<a href="posting.php?mode=new_rel&amp;f=465" title="Создать раздачу"> Создать тему</a>
+									</li>
+									<li><a href="#"><a href="./index.php">Главная</a> <span class="divider">/</span></li>
+									<li><a href="viewforum.php?f=465"  class="active">Игра престолов</a></li>
+								</ul>
+
+								<!--bottom_info-->
+								<div class="bottom_info">
+
+
+									<div class="jumpbox input-append"></div>
+
+									<div id="timezone" class="small">
+										<div>Ваш последний визит: <span class="tz_time">Сегодня 09:24</span></div>
+										<div>Текущее время: <span class="tz_time">Сегодня 13:43</span></div>
+										<div>Часовой пояс: <span class="tz_time">GMT + 4</span></div>
+									</div>
+									<div class="clearfix"></div>
+
+									<p class="med"><a href="viewforum.php?f=465&amp;mark=topics">Отметить все темы как прочтённые</a></p>
+
+
+									<div class="row-fluid" style="border:1px;">
+										<div class="span6 small">
+											Вы <b>не можете</b> начинать темы<br />
+											Вы <b>можете</b> отвечать на сообщения<br />
+											Вы <b>не можете</b> редактировать свои сообщения<br />
+											Вы <b>не можете</b> удалять свои сообщения<br />
+											Вы <b>можете</b> голосовать в опросах<br />
+											Вы <b>можете</b> прикреплять файлы к сообщениям<br />
+											Вы <b>можете</b> скачивать файлы<br />
+										</div>
+										<div class="span6">
+											<i class="icon-comment-alt" style="color:red;"></i>&nbsp;
+											<small>Новые сообщения</small><br>
+											<i class="icon-warning-sign"></i>&nbsp;
+											<small>Объявление</small><br>
+											<i class="icon-comment-alt"></i>&nbsp;&nbsp;
+											<small>Нет новых сообщений</small><br>
+											<i class="icon-paper-clip"></i>&nbsp;&nbsp;
+											<small>Прилепленная</small><br>
+											<i class="icon-lock"></i>&nbsp;&nbsp;
+											<small>Тема закрыта</small><br>
+											<i class="icon-download-alt"></i>&nbsp;
+											<small>Скачиваемая</small>
+										</div>
+									</div>
+								</div><!--/bottom_info-->
+							</div>
+						</div>
+					</div></div>
+			</div>
+			<div id="sideRightW" class="span3">
+				<div id="sideRight">
+					<div class="accordion" id="serialist">
+						<div class="accordion-group">
+							<div class="accordion-heading">
+								<a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse10">#</a>
+							</div>
+							<div id="collapse10" class="accordion-body collapse">
+								<div class="accordion-inner">
+									<ul>
+										<li><a href="/viewforum.php?f=178">10 причин моей ненависти</a></li>
+										<li><a href="/viewforum.php?f=340">100 (Сотня)</a></li>
+										<li><a href="/viewforum.php?f=132">100 Вопросов</a></li>
+										<li><a href="/viewforum.php?f=452">11.22.63</a></li>
+										<li><a href="/viewforum.php?f=544">24 часа: Наследие</a></li>
+										<li><a href="/viewforum.php?f=350">24 часа: Проживи еще один день</a></li>
+										<li><a href="/viewforum.php?f=257">666 парк авеню</a></li>
+										<li><a href="/viewforum.php?f=109">90210</a></li>
+										<li><a href="/viewforum.php?f=375">Halo: Сумерки</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="accordion-group">
+							<div class="accordion-heading">
+								<a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse11">А</a>
+							</div>
+							<div id="collapse11" class="accordion-body collapse">
+								<div class="accordion-inner">
+									<ul>
+										<li><a href="/viewforum.php?f=341">Агенты Щ.И.Т.</a></li>
+										<li><a href="/viewforum.php?f=97">Адвокатская практика</a></li>
+										<li><a href="/viewforum.php?f=479">Американская готика</a></li>
+										<li><a href="/viewforum.php?f=450">Американская История Преступлений</a></li>
+										<li><a href="/viewforum.php?f=370">Американская история ужасов</a></li>
+										<li><a href="/viewforum.php?f=385">Американская Одиссея</a></li>
+										<li><a href="/viewforum.php?f=136">Американская семейка</a></li>
+										<li><a href="/viewforum.php?f=472">Американский запад</a></li>
+										<li><a href="/viewforum.php?f=291">Американцы</a></li>
+										<li><a href="/viewforum.php?f=115">Анатомия Грей</a></li>
+										<li><a href="/viewforum.php?f=442">Ангел из ада</a></li>
+										<li><a href="/viewforum.php?f=296">Арчер</a></li>
+										<li><a href="/viewforum.php?f=491">Атланта</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="accordion-group">
+							<div class="accordion-heading">
+								<a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse12">Б</a>
+							</div>
+							<div id="collapse12" class="accordion-body collapse">
+								<div class="accordion-inner">
+									<ul>
+										<li><a href="/viewforum.php?f=263">Балерины</a></li>
+										<li><a href="/viewforum.php?f=287">Банши</a></li>
+										<li><a href="/viewforum.php?f=380">Батл Крик</a></li>
+										<li><a href="/viewforum.php?f=224">Бедлам</a></li>
+										<li><a href="/viewforum.php?f=191">Без координат</a></li>
+										<li><a href="/viewforum.php?f=477">Безмозглые</a></li>
+										<li><a href="/viewforum.php?f=106">Безумцы</a></li>
+										<li><a href="/viewforum.php?f=137">Белый воротничок</a></li>
+										<li><a href="/viewforum.php?f=269">Бен и Кейт</a></li>
+										<li><a href="/viewforum.php?f=438">Беовульф: Возвращение в Шилдлендс</a></li>
+										<li><a href="/viewforum.php?f=543">Бессильные</a></li>
+										<li><a href="/viewforum.php?f=239">Бешеные псы</a></li>
+										<li><a href="/viewforum.php?f=441">Бешеные псы (USA)</a></li>
+										<li><a href="/viewforum.php?f=238">Благочестивые стервы</a></li>
+										<li><a href="/viewforum.php?f=349">Блудливая Калифорния</a></li>
+										<li><a href="/viewforum.php?f=51">Богатые: Семейство Ричей</a></li>
+										<li><a href="/viewforum.php?f=406">Бойтесь ходячих мертвецов</a></li>
+										<li><a href="/viewforum.php?f=361">Больница Ник</a></li>
+										<li><a href="/viewforum.php?f=538">Большая маленькая ложь</a></li>
+										<li><a href="/viewforum.php?f=427">Больше, чем искусство</a></li>
+										<li><a href="/viewforum.php?f=546">Большой куш</a></li>
+										<li><a href="/viewforum.php?f=463">Бонг времени</a></li>
+										<li><a href="/viewforum.php?f=189">Борджиа</a></li>
+										<li><a href="/viewforum.php?f=217">Босс</a></li>
+										<li><a href="/viewforum.php?f=264">Бриклберри</a></li>
+										<li><a href="/viewforum.php?f=321">Бруклин 9-9</a></li>
+										<li><a href="/viewforum.php?f=221">Будь мужчиной</a></li>
+										<li><a href="/viewforum.php?f=507">Булл</a></li>
+										<li><a href="/viewforum.php?f=348">Бульварные ужасы</a></li>
+										<li><a href="/viewforum.php?f=524">Бунт пай-девочек</a></li>
+										<li><a href="/viewforum.php?f=98">Бывает и хуже</a></li>
+										<li><a href="/viewforum.php?f=184">Быть Человеком</a></li>
+										<li><a href="/viewforum.php?f=112">Быть Эрикой</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="accordion-group">
+							<div class="accordion-heading">
+								<a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse13">В</a>
+							</div>
+							<div id="collapse13" class="accordion-body collapse">
+								<div class="accordion-inner">
+									<ul>
+										<li><a href="/viewforum.php?f=497">В лучшем мире</a></li>
+										<li><a href="/viewforum.php?f=218">В паутине закона</a></li>
+										<li><a href="/viewforum.php?f=205">В поле зрения</a></li>
+										<li><a href="/viewforum.php?f=130">В последний миг</a></li>
+										<li><a href="/viewforum.php?f=425">В пустыне смерти</a></li>
+										<li><a href="/viewforum.php?f=227">В стиле Джейн</a></li>
+										<li><a href="/viewforum.php?f=522">В четырёх стенах</a></li>
+										<li><a href="/viewforum.php?f=261">Вегас</a></li>
+										<li><a href="/viewforum.php?f=329">Ведьмы Ист-Энда</a></li>
+										<li><a href="/viewforum.php?f=314">Везунчик</a></li>
+										<li><a href="/viewforum.php?f=102">Везунчик Сэм</a></li>
+										<li><a href="/viewforum.php?f=63">Везунчик Тед</a></li>
+										<li><a href="/viewforum.php?f=225">Великолепный век</a></li>
+										<li><a href="/viewforum.php?f=345">Верить</a></li>
+										<li><a href="/viewforum.php?f=89">Вернуться к вам</a></li>
+										<li><a href="/viewforum.php?f=365">Вечность</a></li>
+										<li><a href="/viewforum.php?f=298">Викинги</a></li>
+										<li><a href="/viewforum.php?f=490">Виктория</a></li>
+										<li><a href="/viewforum.php?f=476">Вина</a></li>
+										<li><a href="/viewforum.php?f=453">Винил</a></li>
+										<li><a href="/viewforum.php?f=158">Виртуозы</a></li>
+										<li><a href="/viewforum.php?f=510">Вне времени</a></li>
+										<li><a href="/viewforum.php?f=393">Водолей</a></li>
+										<li><a href="/viewforum.php?f=252">Военная хроника</a></li>
+										<li><a href="/viewforum.php?f=201">Возмездие</a></li>
+										<li><a href="/viewforum.php?f=439">Война и мир</a></li>
+										<li><a href="/viewforum.php?f=141">Война Фойла</a></li>
+										<li><a href="/viewforum.php?f=478">Вольтрон. Легендарный Защитник</a></li>
+										<li><a href="/viewforum.php?f=108">Воплощение Страха</a></li>
+										<li><a href="/viewforum.php?f=342">Воскрешение</a></li>
+										<li><a href="/viewforum.php?f=232">Воспитывая Хоуп</a></li>
+										<li><a href="/viewforum.php?f=396">Восьмое чувство</a></li>
+										<li><a href="/viewforum.php?f=166">Врата</a></li>
+										<li><a href="/viewforum.php?f=174">Все лучшее в тебе</a></li>
+										<li><a href="/viewforum.php?f=144">Все мои бывшие</a></li>
+										<li><a href="/viewforum.php?f=435">Второй шанс</a></li>
+										<li><a href="/viewforum.php?f=90">Выживание в пригороде</a></li>
+										<li><a href="/viewforum.php?f=358">Выжившая</a></li>
+										<li><a href="/viewforum.php?f=170">Выжившие</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="accordion-group">
+							<div class="accordion-heading">
+								<a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse14">Г</a>
+							</div>
+							<div id="collapse14" class="accordion-body collapse">
+								<div class="accordion-inner">
+									<ul>
+										<li><a href="/viewforum.php?f=154">Гавайи</a></li>
+										<li><a href="/viewforum.php?f=302">Ганнибал</a></li>
+										<li><a href="/viewforum.php?f=415">Герои: Возрождение</a></li>
+										<li><a href="/viewforum.php?f=134">Гимнастки</a></li>
+										<li><a href="/viewforum.php?f=212">Главный подозреваемый</a></li>
+										<li><a href="/viewforum.php?f=83">Говорящая с призраками</a></li>
+										<li><a href="/viewforum.php?f=527">Голиаф</a></li>
+										<li><a href="/viewforum.php?f=423">Город порока</a></li>
+										<li><a href="/viewforum.php?f=486">Город тайн</a></li>
+										<li><a href="/viewforum.php?f=93">Город Хищниц</a></li>
+										<li><a href="/viewforum.php?f=234">Город чудес</a></li>
+										<li><a href="/viewforum.php?f=366">Готэм</a></li>
+										<li><a href="/viewforum.php?f=528">Гранд тур</a></li>
+										<li><a href="/viewforum.php?f=133">Грань</a></li>
+										<li><a href="/viewforum.php?f=307">Грейсленд</a></li>
+										<li><a href="/viewforum.php?f=368">Грейспоинт</a></li>
+										<li><a href="/viewforum.php?f=457">Гудини и Дойл</a></li>
+										<li><a href="/viewforum.php?f=192">Гэвин и Стейси</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="accordion-group">
+							<div class="accordion-heading">
+								<a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse15">Д</a>
+							</div>
+							<div id="collapse15" class="accordion-body collapse">
+								<div class="accordion-inner">
+									<ul>
+										<li><a href="/viewforum.php?f=460">Дайс</a></li>
+										<li><a href="/viewforum.php?f=243">Даллас</a></li>
+										<li><a href="/viewforum.php?f=146">Дамы семьи Гилмор</a></li>
+										<li><a href="/viewforum.php?f=248">Две девицы на мели</a></li>
+										<li><a href="/viewforum.php?f=202">Двойник</a></li>
+										<li><a href="/viewforum.php?f=530">Девочки Гилмор: Год из жизни</a></li>
+										<li><a href="/viewforum.php?f=461">Девушка по вызову</a></li>
+										<li><a href="/viewforum.php?f=215">Девять жизней Хлои Кинг </a></li>
+										<li><a href="/viewforum.php?f=117">Декстер</a></li>
+										<li><a href="/viewforum.php?f=143">Дело Дойлов</a></li>
+										<li><a href="/viewforum.php?f=304">Демоны да Винчи</a></li>
+										<li><a href="/viewforum.php?f=181">Детройт 1-8-7</a></li>
+										<li><a href="/viewforum.php?f=422">Джекилл и Хайд</a></li>
+										<li><a href="/viewforum.php?f=426">Джессика Джонс</a></li>
+										<li><a href="/viewforum.php?f=315">Джо</a></li>
+										<li><a href="/viewforum.php?f=390">Джонатан Стрендж и мистер Норрелл</a></li>
+										<li><a href="/viewforum.php?f=542">Диета из Санта-Клариты</a></li>
+										<li><a href="/viewforum.php?f=185">Династия Кеннеди</a></li>
+										<li><a href="/viewforum.php?f=105">Дневники «Красной туфельки»</a></li>
+										<li><a href="/viewforum.php?f=88">Дневники вампира</a></li>
+										<li><a href="/viewforum.php?f=259">Доктор мафии</a></li>
+										<li><a href="/viewforum.php?f=209">Доктор Хаус</a></li>
+										<li><a href="/viewforum.php?f=334">Документальные фильмы</a></li>
+										<li><a href="/viewforum.php?f=356">Доминион</a></li>
+										<li><a href="/viewforum.php?f=327">Дракула</a></li>
+										<li><a href="/viewforum.php?f=417">Дробилка</a></li>
+										<li><a href="/viewforum.php?f=488">Дрянь</a></li>
+										<li><a href="/viewforum.php?f=81">Дурман / Косяки</a></li>
+										<li><a href="/viewforum.php?f=504">Дурная слава</a></li>
+										<li><a href="/viewforum.php?f=124">Дурнушка</a></li>
+										<li><a href="/viewforum.php?f=456">Дэмиен</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="accordion-group">
+							<div class="accordion-heading">
+								<a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse16">Ж</a>
+							</div>
+							<div id="collapse16" class="accordion-body collapse">
+								<div class="accordion-inner">
+									<ul>
+										<li><a href="/viewforum.php?f=489">Жан-Клод Ван Джонсон</a></li>
+										<li><a href="/viewforum.php?f=402">Жаркое Американское Лето: Первый день лагеря</a></li>
+										<li><a href="/viewforum.php?f=545">Железный Кулак</a></li>
+										<li><a href="/viewforum.php?f=231">Живая мишень</a></li>
+										<li><a href="/viewforum.php?f=451">Животные</a></li>
+										<li><a href="/viewforum.php?f=94">Жизнь</a></li>
+										<li><a href="/viewforum.php?f=258">Жизнь как шоу</a></li>
+										<li><a href="/viewforum.php?f=186">Жизнь Непредсказуема</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="accordion-group">
+							<div class="accordion-heading">
+								<a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse17">З</a>
+							</div>
+							<div id="collapse17" class="accordion-body collapse">
+								<div class="accordion-inner">
+									<ul>
+										<li><a href="/viewforum.php?f=485">Завучи</a></li>
+										<li><a href="/viewforum.php?f=120">Задержка в развитии</a></li>
+										<li><a href="/viewforum.php?f=541">Заложница</a></li>
+										<li><a href="/viewforum.php?f=354">Замри и гори</a></li>
+										<li><a href="/viewforum.php?f=508">Западный мир</a></li>
+										<li><a href="/viewforum.php?f=275">Записки юного врача</a></li>
+										<li><a href="/viewforum.php?f=196">Защитница</a></li>
+										<li><a href="/viewforum.php?f=44">Звёздные войны: Война клонов</a></li>
+										<li><a href="/viewforum.php?f=398">Зверинец</a></li>
+										<li><a href="/viewforum.php?f=182">Зов крови</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="accordion-group">
+							<div class="accordion-heading">
+								<a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse18">И</a>
+							</div>
+							<div id="collapse18" class="accordion-body collapse">
+								<div class="accordion-inner">
+									<ul>
+										<li><a href="/viewforum.php?f=433">И никого не стало</a></li>
+										<li><a href="/viewforum.php?f=465">Игра престолов</a></li>
+										<li><a href="/viewforum.php?f=413">Игрок</a></li>
+										<li><a href="/viewforum.php?f=399">Игроки</a></li>
+										<li><a href="/viewforum.php?f=437">Из-под пера Диккенса</a></li>
+										<li><a href="/viewforum.php?f=347">Избранный</a></li>
+										<li><a href="/viewforum.php?f=188">Изгнание</a></li>
+										<li><a href="/viewforum.php?f=449">Изгои</a></li>
+										<li><a href="/viewforum.php?f=466">Изгой</a></li>
+										<li><a href="/viewforum.php?f=343">Измена</a></li>
+										<li><a href="/viewforum.php?f=531">Изумрудный город</a></li>
+										<li><a href="/viewforum.php?f=247">Искатель</a></li>
+										<li><a href="/viewforum.php?f=336">Искусственный интеллект</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="accordion-group">
+							<div class="accordion-heading">
+								<a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse19">К</a>
+							</div>
+							<div id="collapse19" class="accordion-body collapse">
+								<div class="accordion-inner">
+									<ul>
+										<li><a href="/viewforum.php?f=494">К лучшему</a></li>
+										<li><a href="/viewforum.php?f=428">К югу от ада</a></li>
+										<li><a href="/viewforum.php?f=373">Как избежать наказания за убийство</a></li>
+										<li><a href="/viewforum.php?f=172">Как не стоит жить</a></li>
+										<li><a href="/viewforum.php?f=126">Каприка</a></li>
+										<li><a href="/viewforum.php?f=462">Карантин</a></li>
+										<li><a href="/viewforum.php?f=495">Карьер</a></li>
+										<li><a href="/viewforum.php?f=155">Касл</a></li>
+										<li><a href="/viewforum.php?f=113">Кентерберийский закон</a></li>
+										<li><a href="/viewforum.php?f=123">Класс</a></li>
+										<li><a href="/viewforum.php?f=470">Клевермэн</a></li>
+										<li><a href="/viewforum.php?f=92">Клиника</a></li>
+										<li><a href="/viewforum.php?f=204">Клуб Плейбоя</a></li>
+										<li><a href="/viewforum.php?f=72">Книжный магазин Блэка</a></li>
+										<li><a href="/viewforum.php?f=318">Коварные горничные</a></li>
+										<li><a href="/viewforum.php?f=213">Ковчег</a></li>
+										<li><a href="/viewforum.php?f=432">Колония</a></li>
+										<li><a href="/viewforum.php?f=253">Кома</a></li>
+										<li><a href="/viewforum.php?f=203">Компаньоны</a></li>
+										<li><a href="/viewforum.php?f=430">Конец детства</a></li>
+										<li><a href="/viewforum.php?f=371">Константин</a></li>
+										<li><a href="/viewforum.php?f=240">Континуум</a></li>
+										<li><a href="/viewforum.php?f=364">Конь БоДжек</a></li>
+										<li><a href="/viewforum.php?f=150">Копы - новобранцы</a></li>
+										<li><a href="/viewforum.php?f=475">Корни</a></li>
+										<li><a href="/viewforum.php?f=480">Королева юга</a></li>
+										<li><a href="/viewforum.php?f=369">Королевство</a></li>
+										<li><a href="/viewforum.php?f=412">Королевы крика</a></li>
+										<li><a href="/viewforum.php?f=69">Короли</a></li>
+										<li><a href="/viewforum.php?f=229">Короли побега</a></li>
+										<li><a href="/viewforum.php?f=525">Корона</a></li>
+										<li><a href="/viewforum.php?f=337">Космос: Пространство и время</a></li>
+										<li><a href="/viewforum.php?f=95">Кости</a></li>
+										<li><a href="/viewforum.php?f=255">Красавица и чудовище</a></li>
+										<li><a href="/viewforum.php?f=50">Красавцы</a></li>
+										<li><a href="/viewforum.php?f=305">Красная вдова</a></li>
+										<li><a href="/viewforum.php?f=372">Красные браслеты</a></li>
+										<li><a href="/viewforum.php?f=339">Кризис</a></li>
+										<li><a href="/viewforum.php?f=509">Кризис в шести сценах</a></li>
+										<li><a href="/viewforum.php?f=416">Кровь и нефть</a></li>
+										<li><a href="/viewforum.php?f=421">Кровью и потом</a></li>
+										<li><a href="/viewforum.php?f=434">Крудсы: Начало</a></li>
+										<li><a href="/viewforum.php?f=86">Крузо</a></li>
+										<li><a href="/viewforum.php?f=418">Куантико</a></li>
+										<li><a href="/viewforum.php?f=294">Культ</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="accordion-group">
+							<div class="accordion-heading">
+								<a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse110">Л</a>
+							</div>
+							<div id="collapse110" class="accordion-body collapse">
+								<div class="accordion-inner">
+									<ul>
+										<li><a href="/viewforum.php?f=312">Легавый</a></li>
+										<li><a href="/viewforum.php?f=363">Легенды</a></li>
+										<li><a href="/viewforum.php?f=447">Легенды завтрашнего дня</a></li>
+										<li><a href="/viewforum.php?f=537">Легион</a></li>
+										<li><a href="/viewforum.php?f=532">Лемони Сникетт: 33 несчастья</a></li>
+										<li><a href="/viewforum.php?f=246">Лонгмайр</a></li>
+										<li><a href="/viewforum.php?f=149">Лузеры</a></li>
+										<li><a href="/viewforum.php?f=114">Лунный свет</a></li>
+										<li><a href="/viewforum.php?f=378">Лучше звоните Солу</a></li>
+										<li><a href="/viewforum.php?f=317">Любовницы</a></li>
+										<li><a href="/viewforum.php?f=153">Любовь на шестерых</a></li>
+										<li><a href="/viewforum.php?f=397">Люди</a></li>
+										<li><a href="/viewforum.php?f=323">Люди будущего</a></li>
+										<li><a href="/viewforum.php?f=506">Люк Кейдж</a></li>
+										<li><a href="/viewforum.php?f=169">Лютер</a></li>
+										<li><a href="/viewforum.php?f=404">Люцифер</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="accordion-group">
+							<div class="accordion-heading">
+								<a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse111">М</a>
+							</div>
+							<div id="collapse111" class="accordion-body collapse">
+								<div class="accordion-inner">
+									<ul>
+										<li><a href="/viewforum.php?f=502">МакГайвер</a></li>
+										<li><a href="/viewforum.php?f=376">Марко Поло</a></li>
+										<li><a href="/viewforum.php?f=464">Марсель</a></li>
+										<li><a href="/viewforum.php?f=70">Мастера вечеринок</a></li>
+										<li><a href="/viewforum.php?f=159">Медиум</a></li>
+										<li><a href="/viewforum.php?f=391">Между</a></li>
+										<li><a href="/viewforum.php?f=87">Менталист</a></li>
+										<li><a href="/viewforum.php?f=236">Месть Тони</a></li>
+										<li><a href="/viewforum.php?f=222">Мешок с костями</a></li>
+										<li><a href="/viewforum.php?f=444">Миллиарды</a></li>
+										<li><a href="/viewforum.php?f=99">Милосердие</a></li>
+										<li><a href="/viewforum.php?f=195">Милые обманщицы</a></li>
+										<li><a href="/viewforum.php?f=394">Мистер Робот</a></li>
+										<li><a href="/viewforum.php?f=176">Мистер Саншайн</a></li>
+										<li><a href="/viewforum.php?f=53">Мой личный злейший враг</a></li>
+										<li><a href="/viewforum.php?f=301">Молодняк</a></li>
+										<li><a href="/viewforum.php?f=521">Молодой Папа</a></li>
+										<li><a href="/viewforum.php?f=214">Молокососы</a></li>
+										<li><a href="/viewforum.php?f=194">Морская полиция: Лос-Анджелес</a></li>
+										<li><a href="/viewforum.php?f=309">Мост</a></li>
+										<li><a href="/viewforum.php?f=299">Мотель Бейтса</a></li>
+										<li><a href="/viewforum.php?f=121">Мужчины среднего возраста</a></li>
+										<li><a href="/viewforum.php?f=333">Мушкетеры</a></li>
+										<li><a href="/viewforum.php?f=67">Мыслить как преступник</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="accordion-group">
+							<div class="accordion-heading">
+								<a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse112">Н</a>
+							</div>
+							<div id="collapse112" class="accordion-body collapse">
+								<div class="accordion-inner">
+									<ul>
+										<li><a href="/viewforum.php?f=401">На грани</a></li>
+										<li><a href="/viewforum.php?f=503">Назначенный преемник</a></li>
+										<li><a href="/viewforum.php?f=471">Накорми зверя</a></li>
+										<li><a href="/viewforum.php?f=409">Нарко</a></li>
+										<li><a href="/viewforum.php?f=199">Наследство сестер Корваль</a></li>
+										<li><a href="/viewforum.php?f=75">Настоящая кровь</a></li>
+										<li><a href="/viewforum.php?f=162">Недоросль</a></li>
+										<li><a href="/viewforum.php?f=230">Неизвестные лица</a></li>
+										<li><a href="/viewforum.php?f=180">Необыкновенная семейка</a></li>
+										<li><a href="/viewforum.php?f=193">Непрощенная</a></li>
+										<li><a href="/viewforum.php?f=382">Несгибаемая Кимми Шмидт</a></li>
+										<li><a href="/viewforum.php?f=313">Низкое зимнее солнце</a></li>
+										<li><a href="/viewforum.php?f=148">Никита</a></li>
+										<li><a href="/viewforum.php?f=216">Новая Мод</a></li>
+										<li><a href="/viewforum.php?f=245">Новости</a></li>
+										<li><a href="/viewforum.php?f=52">Новый Амстердам</a></li>
+										<li><a href="/viewforum.php?f=454">Ночной администратор</a></li>
+										<li><a href="/viewforum.php?f=265">Нью-Йорк 22</a></li>
+										<li><a href="/viewforum.php?f=316">Нэшвиль</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="accordion-group">
+							<div class="accordion-heading">
+								<a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse113">О</a>
+							</div>
+							<div id="collapse113" class="accordion-body collapse">
+								<div class="accordion-inner">
+									<ul>
+										<li><a href="/viewforum.php?f=223">Обитель лжи</a></li>
+										<li><a href="/viewforum.php?f=411">Области тьмы</a></li>
+										<li><a href="/viewforum.php?f=80">Обмани меня / Теория лжи</a></li>
+										<li><a href="/viewforum.php?f=220">Оборотень</a></li>
+										<li><a href="/viewforum.php?f=242">Общее дело</a></li>
+										<li><a href="/viewforum.php?f=407">Общественная мораль</a></li>
+										<li><a href="/viewforum.php?f=104">Одинокий Гари</a></li>
+										<li><a href="/viewforum.php?f=228">Однажды в сказке</a></li>
+										<li><a href="/viewforum.php?f=326">Однажды в стране чудес</a></li>
+										<li><a href="/viewforum.php?f=446">Олух</a></li>
+										<li><a href="/viewforum.php?f=311">Оранжевый - хит сезона</a></li>
+										<li><a href="/viewforum.php?f=405">Особое мнение</a></li>
+										<li><a href="/viewforum.php?f=357">Остатки</a></li>
+										<li><a href="/viewforum.php?f=111">Остаться в живых</a></li>
+										<li><a href="/viewforum.php?f=71">Остров Харпера</a></li>
+										<li><a href="/viewforum.php?f=338">От заката до рассвета</a></li>
+										<li><a href="/viewforum.php?f=487">Отрыв</a></li>
+										<li><a href="/viewforum.php?f=443">Оттенки синего</a></li>
+										<li><a href="/viewforum.php?f=219">Отчаянные домохозяйки</a></li>
+										<li><a href="/viewforum.php?f=260">Отчаянные меры</a></li>
+										<li><a href="/viewforum.php?f=484">Очень странные дела</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="accordion-group">
+							<div class="accordion-heading">
+								<a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse114">П</a>
+							</div>
+							<div id="collapse114" class="accordion-body collapse">
+								<div class="accordion-inner">
+									<ul>
+										<li><a href="/viewforum.php?f=410">Палач-Бастард</a></li>
+										<li><a href="/viewforum.php?f=272">Папочка</a></li>
+										<li><a href="/viewforum.php?f=293">Партнеры</a></li>
+										<li><a href="/viewforum.php?f=78">Пациент всегда прав</a></li>
+										<li><a href="/viewforum.php?f=161">Первокурсники</a></li>
+										<li><a href="/viewforum.php?f=319">Пересекая черту</a></li>
+										<li><a href="/viewforum.php?f=164">Плохие</a></li>
+										<li><a href="/viewforum.php?f=468">По волчьим законам</a></li>
+										<li><a href="/viewforum.php?f=474">По дороге с Норманом Ридусом</a></li>
+										<li><a href="/viewforum.php?f=539">По друзьям</a></li>
+										<li><a href="/viewforum.php?f=310">Под куполом</a></li>
+										<li><a href="/viewforum.php?f=388">Под прикрытием</a></li>
+										<li><a href="/viewforum.php?f=266">Под прицелом</a></li>
+										<li><a href="/viewforum.php?f=501">Подача</a></li>
+										<li><a href="/viewforum.php?f=82">Подопытные</a></li>
+										<li><a href="/viewforum.php?f=168">Подпольная империя</a></li>
+										<li><a href="/viewforum.php?f=271">Полнолуние</a></li>
+										<li><a href="/viewforum.php?f=237">Помнить всё</a></li>
+										<li><a href="/viewforum.php?f=47">Портал Юрского периода</a></li>
+										<li><a href="/viewforum.php?f=387">Посланники</a></li>
+										<li><a href="/viewforum.php?f=419">Последнее королевство</a></li>
+										<li><a href="/viewforum.php?f=233">Последний настоящий мужчина</a></li>
+										<li><a href="/viewforum.php?f=290">Последователи</a></li>
+										<li><a href="/viewforum.php?f=335">Последствия</a></li>
+										<li><a href="/viewforum.php?f=183">Посредник Кейт</a></li>
+										<li><a href="/viewforum.php?f=515">Потоки</a></li>
+										<li><a href="/viewforum.php?f=328">Почти человек</a></li>
+										<li><a href="/viewforum.php?f=379">Пощёчина</a></li>
+										<li><a href="/viewforum.php?f=116">Правила совместной жизни</a></li>
+										<li><a href="/viewforum.php?f=187">Правосудие</a></li>
+										<li><a href="/viewforum.php?f=49">Прах к праху</a></li>
+										<li><a href="/viewforum.php?f=157">Преследование</a></li>
+										<li><a href="/viewforum.php?f=45">Привилегии богатых девчонок</a></li>
+										<li><a href="/viewforum.php?f=511">Приговор</a></li>
+										<li><a href="/viewforum.php?f=377">Приключения кота в сапогах</a></li>
+										<li><a href="/viewforum.php?f=262">Проект Минди</a></li>
+										<li><a href="/viewforum.php?f=54">Пропавший</a></li>
+										<li><a href="/viewforum.php?f=467">Проповедник</a></li>
+										<li><a href="/viewforum.php?f=251">Просветленная</a></li>
+										<li><a href="/viewforum.php?f=140">Прослушка</a></li>
+										<li><a href="/viewforum.php?f=499">Просто</a></li>
+										<li><a href="/viewforum.php?f=17">Прочие сериалы</a></li>
+										<li><a href="/viewforum.php?f=77">Психвилль</a></li>
+										<li><a href="/viewforum.php?f=459">Путь</a></li>
+										<li><a href="/viewforum.php?f=142">Пятеро под солнцем</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="accordion-group">
+							<div class="accordion-heading">
+								<a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse115">Р</a>
+							</div>
+							<div id="collapse115" class="accordion-body collapse">
+								<div class="accordion-inner">
+									<ul>
+										<li><a href="/viewforum.php?f=517">Радиоволна</a></li>
+										<li><a href="/viewforum.php?f=514">Развод</a></li>
+										<li><a href="/viewforum.php?f=482">Разгар лета</a></li>
+										<li><a href="/viewforum.php?f=381">Раскопка</a></li>
+										<li><a href="/viewforum.php?f=254">Революция</a></li>
+										<li><a href="/viewforum.php?f=107">Ремингтон Стил</a></li>
+										<li><a href="/viewforum.php?f=198">Риццоли и Айлс</a></li>
+										<li><a href="/viewforum.php?f=536">Родина</a></li>
+										<li><a href="/viewforum.php?f=118">Родители</a></li>
+										<li><a href="/viewforum.php?f=384">Родословная</a></li>
+										<li><a href="/viewforum.php?f=414">Роузвуд</a></li>
+										<li><a href="/viewforum.php?f=526">Рубеж</a></li>
+										<li><a href="/viewforum.php?f=100">Рыцарь дорог</a></li>
+										<li><a href="/viewforum.php?f=308">Рэй Донован</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="accordion-group">
+							<div class="accordion-heading">
+								<a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse116">С</a>
+							</div>
+							<div id="collapse116" class="accordion-body collapse">
+								<div class="accordion-inner">
+									<ul>
+										<li><a href="/viewforum.php?f=469">С любовью, Нина</a></li>
+										<li><a href="/viewforum.php?f=346">Салем</a></li>
+										<li><a href="/viewforum.php?f=325">Сверхъестественное</a></li>
+										<li><a href="/viewforum.php?f=516">Свидетели</a></li>
+										<li><a href="/viewforum.php?f=55">Свингтаун (Город любви)</a></li>
+										<li><a href="/viewforum.php?f=226">Связь</a></li>
+										<li><a href="/viewforum.php?f=429">Святые и незнакомцы</a></li>
+										<li><a href="/viewforum.php?f=448">Секретные материалы</a></li>
+										<li><a href="/viewforum.php?f=400">Секс, наркотики и рок-н-ролл</a></li>
+										<li><a href="/viewforum.php?f=171">Семейное положение: Нужное под</a></li>
+										<li><a href="/viewforum.php?f=128">Сестра Джеки</a></li>
+										<li><a href="/viewforum.php?f=96">Симпсоны</a></li>
+										<li><a href="/viewforum.php?f=276">Синдбад</a></li>
+										<li><a href="/viewforum.php?f=241">Скандал</a></li>
+										<li><a href="/viewforum.php?f=103">Склад 13</a></li>
+										<li><a href="/viewforum.php?f=249">Скотт и Бейли</a></li>
+										<li><a href="/viewforum.php?f=101">Скучно до смерти </a></li>
+										<li><a href="/viewforum.php?f=403">Слепая зона</a></li>
+										<li><a href="/viewforum.php?f=481">Слово на букву А</a></li>
+										<li><a href="/viewforum.php?f=505">Смертельное оружие</a></li>
+										<li><a href="/viewforum.php?f=244">Смерть в раю</a></li>
+										<li><a href="/viewforum.php?f=160">Событие</a></li>
+										<li><a href="/viewforum.php?f=320">Сонная Лощина</a></li>
+										<li><a href="/viewforum.php?f=386">Сорвиголова</a></li>
+										<li><a href="/viewforum.php?f=273">Соседи</a></li>
+										<li><a href="/viewforum.php?f=156">Софи</a></li>
+										<li><a href="/viewforum.php?f=177">Спартак: кровь и песок</a></li>
+										<li><a href="/viewforum.php?f=74">Спасая Жизни</a></li>
+										<li><a href="/viewforum.php?f=331">Спираль</a></li>
+										<li><a href="/viewforum.php?f=235">Список клиентов</a></li>
+										<li><a href="/viewforum.php?f=127">Сплетница</a></li>
+										<li><a href="/viewforum.php?f=367">Сталкер</a></li>
+										<li><a href="/viewforum.php?f=493">СтартАп</a></li>
+										<li><a href="/viewforum.php?f=190">Столик в углу</a></li>
+										<li><a href="/viewforum.php?f=267">Стрела</a></li>
+										<li><a href="/viewforum.php?f=529">Стрелок</a></li>
+										<li><a href="/viewforum.php?f=523">Стэн против сил зла</a></li>
+										<li><a href="/viewforum.php?f=330">Сумасшедшие</a></li>
+										<li><a href="/viewforum.php?f=445">Сумеречные охотники</a></li>
+										<li><a href="/viewforum.php?f=392">Супергёрл</a></li>
+										<li><a href="/viewforum.php?f=56">Схватка</a></li>
+										<li><a href="/viewforum.php?f=57">Счастливчик Луи</a></li>
+										<li><a href="/viewforum.php?f=131">Счастливый город</a></li>
+										<li><a href="/viewforum.php?f=210">Счастливый конец</a></li>
+										<li><a href="/viewforum.php?f=496">Сын Зорна</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="accordion-group">
+							<div class="accordion-heading">
+								<a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse117">Т</a>
+							</div>
+							<div id="collapse117" class="accordion-body collapse">
+								<div class="accordion-inner">
+									<ul>
+										<li><a href="/viewforum.php?f=534">Табу</a></li>
+										<li><a href="/viewforum.php?f=200">Тайные связи</a></li>
+										<li><a href="/viewforum.php?f=431">Теленовелла</a></li>
+										<li><a href="/viewforum.php?f=125">Теория большого взрыва</a></li>
+										<li><a href="/viewforum.php?f=208">Терра Нова</a></li>
+										<li><a href="/viewforum.php?f=473">Техкоманда</a></li>
+										<li><a href="/viewforum.php?f=355">Тиран</a></li>
+										<li><a href="/viewforum.php?f=122">Тихоокеанский фронт</a></li>
+										<li><a href="/viewforum.php?f=483">Той ночью</a></li>
+										<li><a href="/viewforum.php?f=332">Третья жена</a></li>
+										<li><a href="/viewforum.php?f=175">Три реки</a></li>
+										<li><a href="/viewforum.php?f=167">Трудные деньки ЭрДжея Бергера</a></li>
+										<li><a href="/viewforum.php?f=360">Ты - Отстой</a></li>
+										<li><a href="/viewforum.php?f=129">Тюдоры</a></li>
+										<li><a href="/viewforum.php?f=306">Тяжелый понедельник</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="accordion-group">
+							<div class="accordion-heading">
+								<a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse118">У</a>
+							</div>
+							<div id="collapse118" class="accordion-body collapse">
+								<div class="accordion-inner">
+									<ul>
+										<li><a href="/viewforum.php?f=79">Убежище</a></li>
+										<li><a href="/viewforum.php?f=207">Убийство</a></li>
+										<li><a href="/viewforum.php?f=322">Убийство на пляже</a></li>
+										<li><a href="/viewforum.php?f=277">Улица потрошителя</a></li>
+										<li><a href="/viewforum.php?f=458">Уловка</a></li>
+										<li><a href="/viewforum.php?f=110">Университет</a></li>
+										<li><a href="/viewforum.php?f=389">Уэйуорд Пайнс</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="accordion-group">
+							<div class="accordion-heading">
+								<a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse119">Ф</a>
+							</div>
+							<div id="collapse119" class="accordion-body collapse">
+								<div class="accordion-inner">
+									<ul>
+										<li><a href="/viewforum.php?f=344">Фарго</a></li>
+										<li><a href="/viewforum.php?f=173">Фишки. Деньги. Адвокаты</a></li>
+										<li><a href="/viewforum.php?f=374">Флэш</a></li>
+										<li><a href="/viewforum.php?f=206">Форс-мажоры</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="accordion-group">
+							<div class="accordion-heading">
+								<a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse120">Х</a>
+							</div>
+							<div id="collapse120" class="accordion-body collapse">
+								<div class="accordion-inner">
+									<ul>
+										<li><a href="/viewforum.php?f=492">Харли и Дэвидсоны</a></li>
+										<li><a href="/viewforum.php?f=303">Хемлок Гроув</a></li>
+										<li><a href="/viewforum.php?f=165">Ходячие мертвецы</a></li>
+										<li><a href="/viewforum.php?f=520">Холистическое Детективное агентство Дирка Джентли</a></li>
+										<li><a href="/viewforum.php?f=179">Хор</a></li>
+										<li><a href="/viewforum.php?f=540">Хорошая борьба</a></li>
+										<li><a href="/viewforum.php?f=119">Хорошая жена</a></li>
+										<li><a href="/viewforum.php?f=197">Хоторн</a></li>
+										<li><a href="/viewforum.php?f=440">Хроники Шаннары</a></li>
+										<li><a href="/viewforum.php?f=436">Художественные фильмы</a></li>
+										<li><a href="/viewforum.php?f=138">Худшая неделя моей жизни</a></li>
+										<li><a href="/viewforum.php?f=163">Хэйвен</a></li>
+										<li><a href="/viewforum.php?f=151">Хэлкэтс</a></li>
+										<li><a href="/viewforum.php?f=455">Хэп и Леонард</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="accordion-group">
+							<div class="accordion-heading">
+								<a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse121">Ч</a>
+							</div>
+							<div id="collapse121" class="accordion-body collapse">
+								<div class="accordion-inner">
+									<ul>
+										<li><a href="/viewforum.php?f=518">Чанс</a></li>
+										<li><a href="/viewforum.php?f=424">Человек в высоком замке</a></li>
+										<li><a href="/viewforum.php?f=353">Череп и кости</a></li>
+										<li><a href="/viewforum.php?f=274">Черепашки-ниндзя</a></li>
+										<li><a href="/viewforum.php?f=46">Черная метка</a></li>
+										<li><a href="/viewforum.php?f=519">Чёрное зеркало</a></li>
+										<li><a href="/viewforum.php?f=324">Черный список</a></li>
+										<li><a href="/viewforum.php?f=362">Чужестранка</a></li>
+										<li><a href="/viewforum.php?f=84">Чужие в Америке</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="accordion-group">
+							<div class="accordion-heading">
+								<a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse122">Ш</a>
+							</div>
+							<div id="collapse122" class="accordion-body collapse">
+								<div class="accordion-inner">
+									<ul>
+										<li><a href="/viewforum.php?f=395">Шёпот</a></li>
+										<li><a href="/viewforum.php?f=152">Шерлок</a></li>
+										<li><a href="/viewforum.php?f=535">Шестой отряд</a></li>
+										<li><a href="/viewforum.php?f=250">Школа Видеоигр</a></li>
+										<li><a href="/viewforum.php?f=270">Шпион</a></li>
+										<li><a href="/viewforum.php?f=76">Шпионки</a></li>
+										<li><a href="/viewforum.php?f=359">Штамм</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="accordion-group">
+							<div class="accordion-heading">
+								<a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse123">Э</a>
+							</div>
+							<div id="collapse123" class="accordion-body collapse">
+								<div class="accordion-inner">
+									<ul>
+										<li><a href="/viewforum.php?f=500">Экзорцист</a></li>
+										<li><a href="/viewforum.php?f=256">Элементарно</a></li>
+										<li><a href="/viewforum.php?f=145">Эта страшная буква Р</a></li>
+										<li><a href="/viewforum.php?f=498">Это мы</a></li>
+										<li><a href="/viewforum.php?f=420">Эш против Зловещих мертвецов</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="accordion-group">
+							<div class="accordion-heading">
+								<a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse124">Ю</a>
+							</div>
+							<div id="collapse124" class="accordion-body collapse">
+								<div class="accordion-inner">
+									<ul>
+										<li><a href="/viewforum.php?f=295">Южная Территория</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="accordion-group">
+							<div class="accordion-heading">
+								<a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse125">Я</a>
+							</div>
+							<div id="collapse125" class="accordion-body collapse">
+								<div class="accordion-inner">
+									<ul>
+										<li><a href="/viewforum.php?f=383">ЯЗомби</a></li>
+										<li><a href="/viewforum.php?f=85">Ясновидец</a></li>
+										<li><a href="/viewforum.php?f=211">Ястреб</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="container-fluid">
+			<div class="footer">
+				<div class="row-fluid">
+					<div class="span4">
+						<div class="navbar tl">
+							<a href="/" title="На главную NewStudio.TV" class="brand">NewStudio.TV</a>
+						</div>
+					</div>
+					<div class="span4 offset4 tr">
+
+
+						<a target="_blank" href="/rss.php" tooltip="(ссылка откроется в новом окне)">
+							<img border="0" src="/templates/newstudio/pic/icon-rss.png" tooltip="rss">
+						</a>
+						<a target="_blank" href="http://vk.com/club2682332" tooltip="(ссылка откроется в новом окне)">
+							<img border="0" src="/templates/newstudio/pic/icon-vk.png" tooltip="вконтакте">
+						</a>
+
+
+						<div class="schet">
+							<a href='http://hit.ua/?x=114090' target='_blank'>
+								<script language="javascript" type="text/javascript"><!--
+                                Cd=document;Cr="&"+Math.random();Cp="&s=1";
+                                Cd.cookie="b=b";if(Cd.cookie)Cp+="&c=1";
+                                Cp+="&t="+(new Date()).getTimezoneOffset();
+                                if(self!=top)Cp+="&f=1";
+                                //--></script>
+								<script language="javascript1.1" type="text/javascript"><!--
+                                if(navigator.javaEnabled())Cp+="&j=1";
+                                //--></script>
+								<script language="javascript1.2" type="text/javascript"><!--
+                                if(typeof(screen)!='undefined')Cp+="&w="+screen.width+"&h="+
+                                    screen.height+"&d="+(screen.colorDepth?screen.colorDepth:screen.pixelDepth);
+                                //--></script>
+								<script language="javascript" type="text/javascript"><!--
+                                Cd.write("<img src='http://c.hit.ua/hit?i=114090&g=0&x=1"+Cp+Cr+
+                                    "&r="+escape(Cd.referrer)+"&u="+escape(window.location.href)+
+                                    "' border='0' width='88' height='31' "+
+                                    "alt='hit.ua: сейчас на сайте, посетителей и просмотров за сегодня' title='hit.ua: сейчас на сайте, посетителей и просмотров за сегодня'/>");
+                                //--></script>
+								<noscript>
+									<img src='http://c.hit.ua/hit?i=114090&amp;g=0&amp;x=1' border='0' width='88' height='31' alt='hit.ua: сейчас на сайте, посетителей и просмотров за сегодня' title='hit.ua: сейчас на сайте, посетителей и просмотров за сегодня'/>
+								</noscript>
+							</a>
+							<!--LiveInternet counter--><script type="text/javascript"><!--
+                        document.write("<a href='http://www.liveinternet.ru/click' "+
+                            "target=_blank><img src='//counter.yadro.ru/hit?t14.6;r"+
+                            escape(document.referrer)+((typeof(screen)=="undefined")?"":
+                                ";s"+screen.width+"*"+screen.height+"*"+(screen.colorDepth?
+                                    screen.colorDepth:screen.pixelDepth))+";u"+escape(document.URL)+
+                            ";"+Math.random()+
+                            "' alt='' title='LiveInternet: показано число просмотров за 24"+
+                            " часа, посетителей за 24 часа и за сегодня' "+
+                            "border='0' width='88' height='31'><\/a>")
+                        //--></script><!--/LiveInternet-->
+						</div>
+					</div>
+				</div>
+				<div class="row-fluid">
+					<ul class="span2 offset1">
+						<li><a href="/faq.php">FAQ</a></li>
+						<!--li><a href="#">Пункт меню3</a></li-->
+					</ul>
+					<ul class="span2">
+						<li><a href="/advertiser.php">Рекламодателям</a></li>
+						<!--li><a href="#">Пункт меню1</a></li>
+                        <li><a href="#">Пункт меню2</a></li>
+                        <li><a href="#">Пункт меню3</a></li-->
+					</ul>
+					<div class="span5" style="margin-top:-38px;">
+
+						<!-- bigbn.com.ua 468x60-->
+						<!--ScRipT lanGuagE='jAvAscrIpt'>
+                        //<!--
+                        d=document;
+                        rnd_num = Math.round((Math.random()*10000000));
+                        bbn_l='&'+escape((self!=top)?'f'+d.referrer:'h'+window.location.href);
+                        d.write('<iFrame src=http://ad0.bigmir.net/t.bbn?32789&0&f&'+rnd_num+bbn_l+
+                        ' width=468 height=60 frameborder=0 vspace=0 hspace=0 marginwidth=0 marginheight=0 scrolling=no>');
+                        d.write('<a target=_blank href=http://ad0.bigmir.net/c.bbn?32789&0&'+rnd_num+bbn_l+
+                        '><img src=http://ad0.bigmir.net/t.bbn?32789&0&i&'+rnd_num+bbn_l+' width=468 height=60 border=0 alt="BigBN Common"></a></iFrame>');
+                        //-->
+						<!--/ScriPt-->
+						<!-- bigbn.com.ua 468x60-->
+
+					</div>
+
+
+
+
+
+
+				</div>
+			</div>
+		</div>
+	</div><!--wrap-->
+	<!-- login Modal -->
+	<div id="login" class="modal hide fade" tabindex="5" role="dialog" aria-labelledby="loginLabel" aria-hidden="true">
+		<div class="modal-header">
+			<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+			<h3 id="loginLabel">Выберите способ авторизации</h3>
+		</div>
+		<div class="modal-body">
+			<form class="form-signin" action="/login.php" method="post">
+				<input type="text" class="input-block-level" name="login_username" placeholder="Логин" accesskey="l">
+				<input type="password" class="input-block-level" name="login_password" placeholder="Пароль">
+				<label class="checkbox">
+					<input type="checkbox" value="1" name="autologin" checked="checked">Запомнить меня
+				</label>
+				<input type="hidden" name="login" value="1">
+				<button class="btn btn-large" type="submit">Войти</button>
+				<a class="btn btn-large" href="profile.php?mode=register">Регистрация</a>
+				<a class="btn btn-large" href="profile.php?mode=sendpassword">Забыли пароль?</a>
+			</form>
+		</div>
+		<!-- <div class="modal-footer"></div> -->
+	</div>
+	<script src="/templates/newstudio/js/bootstrap.min.js"></script>
+	<script type="text/javascript">
+        $(function () {
+            $(window).resize(function () {
+                var bwidth = ($("body").outerWidth() - $("#wrap").outerWidth()) / 2;
+                $("#br").css("right", -bwidth);
+                $("#br").css("width", bwidth);
+                $("#bl").css("left", -bwidth);
+                $("#bl").css("width", bwidth);
+            }).resize();
+        });
+	</script>
+
+
+</body>
+
+</html>
+
+</div><!--/body_container-->
+
+</body>
+</html>

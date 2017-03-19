@@ -5,14 +5,16 @@ import com.warrior.shows_collector.ShowCollector
 import org.apache.logging.log4j.LogManager
 import org.jsoup.Jsoup
 import java.io.IOException
+import java.net.URI
 import java.util.*
 
 /**
  * Created by warrior on 2/19/17.
  */
-class NewStudioCollector(private val newStudioId: Int) : ShowCollector {
+class NewStudioCollector(
+        private val newStudioId: Int,
+        private val baseUrl: String = BASE_URL) : ShowCollector {
 
-    private val BASE_URL = "http://newstudio.tv"
     private val EXCLUDED_ELEMENTS = setOf(
             17,
             101
@@ -23,7 +25,7 @@ class NewStudioCollector(private val newStudioId: Int) : ShowCollector {
     override fun collect(): List<Show> {
         val shows = ArrayList<Show>()
         try {
-            val document = Jsoup.connect(BASE_URL).get()
+            val document = Jsoup.connect(baseUrl).get()
             val elements = document.select("div#serialist li > a")
             for (e in elements) {
                 val href = e.attr("href")
@@ -31,7 +33,7 @@ class NewStudioCollector(private val newStudioId: Int) : ShowCollector {
                 if (rawId in EXCLUDED_ELEMENTS) {
                     continue
                 }
-                val showDetails = ShowDetailsExtractor.getShowDetails(BASE_URL + href)
+                val showDetails = ShowDetailsExtractor.getShowDetails(URI(baseUrl).resolve(href).toString())
                 if (showDetails != null) {
                     val (title, localTitle, season, episodeNumber) = showDetails
                     val show = Show(newStudioId, rawId, title, localTitle, season, episodeNumber)
@@ -47,5 +49,9 @@ class NewStudioCollector(private val newStudioId: Int) : ShowCollector {
             return emptyList()
         }
         return shows
+    }
+
+    companion object {
+        private const val BASE_URL = "http://newstudio.tv"
     }
 }

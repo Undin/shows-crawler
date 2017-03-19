@@ -1,0 +1,1625 @@
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>NewStudio</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <link rel="alternate" type="application/rss+xml" title="RSS" href="/rss.php">
+    <link rel="stylesheet" href="/templates/newstudio/css/newstudio.css" type="text/css" />
+    <script src="/templates/newstudio/js/jquery-latest.js"></script>
+    <script src="/templates/newstudio/js/jquery.autocomplete.js"></script>
+    <script src="/templates/newstudio/js/jquery.cookie.js"></script>
+
+    <script type="text/javascript">
+        $(function(){
+            $(".search-query").autocomplete({
+                serviceUrl: '/autocomplete.php',
+                minChars: 2,
+                delimiter: /(;)\s*/,
+                maxHeight: 400,
+                width: 640,
+                zIndex: 9999,
+                deferRequestBy: 300,
+                onSelect: function(data, value){
+                    window.location = '/'+value;
+                }
+            });
+        })
+    </script>
+
+    <script type="text/javascript" src="/misc/js/main.js?v=1"></script>
+    <script type="text/javascript">
+        var BB_ROOT       = "./";
+        var cookieDomain  = "newstudio.tv";
+        var cookiePath    = "/";
+        var cookieSecure  = 0;
+        var cookiePrefix  = "bb_";
+        var LOGGED_IN     = 1;
+        var InfoWinParams = 'HEIGHT=510,resizable=yes,WIDTH=780';
+
+        var user = {
+            opt_js: {"only_new":0,"h_av":0,"h_rnk_i":0,"h_post_i":0,"h_smile":0,"h_sig":0,"sp_op":0,"tr_t_ax":0,"tr_t_t":0,"hl_tr":1,"i_aft_l":0},
+
+            set: function(opt, val, days, reload) {
+                this.opt_js[opt] = val;
+                setCookie('opt_js', $.toJSON(this.opt_js), days);
+                if (reload) {
+                    window.location.reload();
+                }
+            }
+        }
+
+        var ajax = new Ajax('./ajax.php', 'POST', 'json');
+
+        function getElText (e)
+        {
+            var t = '';
+            if (e.textContent !== undefined) { t = e.textContent; } else if (e.innerText !== undefined) { t = e.innerText; } else { t = jQuery(e).text(); }
+            return t;
+        }
+        function escHTML (txt)
+        {
+            return txt.replace(/</g, '&lt;');
+        }
+    </script>
+</head>
+<body style="background: url('/images/fones/fonePic1489901247.jpg') no-repeat scroll 50% 0 #000000;padding-top:420px;">
+
+<style>
+    .up-button {
+        display: none;
+        position:fixed;
+        bottom: 4px;
+        background-color:#FBF9E4;
+        width:35px;
+        line-height:30px;
+        text-align:center;
+        font-size:1.4em;
+        text-decoration:none;
+        opacity:0.7;
+        z-index:5
+    }
+    .up-button:hover{
+        opacity: 1;
+    }
+    .up-left{
+        left:0;
+        border-radius:0 4px 4px 0;
+
+    }
+    .up-right{
+        right:0;
+        border-radius:4px 0 0 4px;
+
+    }
+
+</style>
+<script type="text/javascript">
+    jQuery(function($) {
+
+        var upperLimit = 100, scrollElem = $(".up-button"), scrollSpeed = 500;
+        $(window).scroll(function () {
+            var scrollTop = $(document).scrollTop();
+            if ( scrollTop > upperLimit ) {
+                $(scrollElem).stop().fadeTo(300, 1); // fade back in
+            } else {
+                $(scrollElem).stop().fadeTo(300, 0); // fade out
+            }
+        }).scroll();
+        $(scrollElem).click(function(){
+            $('html, body').animate({scrollTop:0}, scrollSpeed); return false;
+        });
+
+
+    });
+</script>
+<a href="#" class="up-button up-left"><img src="/images/up_arrow.png" style="width: 17px;height: 17px;z-index:2;"></a>
+<a href="#" class="up-button up-right"><img src="/images/up_arrow.png" style="width: 17px;height: 17px;z-index:2;"></a>
+
+<div id="wrap">
+    <div class="container-fluid">
+        <div class="navbar navbar-inverse">
+            <div class="navbar-inner">
+                <div class="container-fluid">
+                    <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+                    <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </a>
+                    <a class="brand" href="/">NewStudio.TV</a>
+                    <div class="nav-collapse collapse">
+
+                        <!--<ul class="nav">
+                            <li class="active"><a href="#"><i class="icon-film"></i> трекер</a></li>
+                        </ul>-->
+                        <div class="nav pull-right">
+
+                            <div class="btn-group">
+                                <a class="btn btn-inverse" href="/profile.php?mode=viewprofile&amp;u=138436">Warrior</a>
+                                <a class="btn btn-inverse dropdown-toggle" data-toggle="dropdown" href="#"><span class="icon-caret-down"></span></a>
+                                <ul class="dropdown-menu">
+                                    <li><a id="profile" href="/profile.php?mode=viewprofile&amp;u=138436"><i class="icon-user-md"></i> профиль</a></li>
+                                    <li><a id="privmsgl" href="/privmsg.php"><i class="icon-comments"></i> сообщения</a></li>
+                                    <li><a id="logout" href="/login.php?logout=1"><i class="icon-signout"></i> Выход</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <ul class="nav pull-right">
+                            <li><a href="/tracker.php"><i class="icon-film"></i> Релизы</a></li>
+                            <li><a href="/forum.php"><i class="icon-comments-alt"></i> Форум</a></li>
+                        </ul>
+                        <form class="navbar-search pull-right" action="/tracker.php#results" method="post">
+                            <input type="hidden" name="max" value="1">
+                            <input type="hidden" name="to" value="1">
+                            <input name="nm" class="search-query" type="text" placeholder="Найти сериал" style="width:310px;">&nbsp;
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="text-align:center;text-align:middle;margin:0 auto;background:#dbdbdb;">
+        <br><center><object width="728" height="90">
+        <param name="movie" value="menu.swf">
+        <embed src="menu.swf" width="728" height="90">
+        </embed>
+    </object></center><br>        </div>
+
+
+    <div class="container-fluid bg-img">
+
+        <div class="row-fluid">
+            <div  id="sideLeftW" class="span9">
+                <div id="sideLeft">
+
+
+
+                    <script type="text/javascript">
+                        $(function(){
+                            $('a#news_link').click(function(){
+                                if($('a#news_link').hasClass("collapsed")){
+                                    $.cookie("news_main", null);
+                                } else {
+                                    $.cookie("news_main", "collapsed");
+
+                                }
+                            });
+                        })
+                    </script>
+
+
+                    <div class="accordion" id="newswrap">
+                        <div class="accordion-group" style="margin-left:5px;">
+
+                            <div class="accordion-heading">
+                                <h5 style="margin:0;">
+
+                                    <a id="news_link" class="accordion-toggle " data-toggle="collapse" data-parent="#news" href="#newswrap1">
+                                        Новости
+                                        <i class="icon-chevron-down pull-right"> </i>
+                                    </a>
+                                </h5>
+                            </div>
+
+                            <div id="newswrap1" class="accordion-body collapse in">
+                                <div class="accordion-inner">
+
+                                    <div class="well well-small">
+                                        <span class="label pull-right">29.01.2017</span>
+                                        <span class="label clearfix">Спонсирование: Сумеречные Охотники</span>
+                                        <br>
+                                        Друзья!Как вы, вероятно, заметили, с начала наступившего года наша группа выпускает не так много релизов, как обычно. Дело в том, что ряд сериалов, которые мы хотели взять в работу после праздников, остался без спонсорской поддержки. Почему так вышло сейчас не имеет значения, вдаваться в подробности мы не хотим. Суть остаётся такова, что очень мног...                    <a href="/viewtopic.php?t=22583" class="label-link pull-right">читать дальше…</a>
+                                    </div>
+
+
+                                    <div class="well well-small">
+                                        <span class="label pull-right">30.11.2016</span>
+                                        <span class="label clearfix">F.A.Q. или ответы на самые заколебавшие вопросы</span>
+                                        <br>
+                                        1. Почему у вас нет графика и/или расписания? А вон у других релиз-групп есть, а у вас чё? Ответ: Расписание возможно составлять только тогда, когда существует возможность контролировать запись и/или минимизировать задержки. У одних групп свои студии звукозаписи, у других групп задействованы исключительно актёры, которые пишутся дома, соответственн...                    <a href="/viewtopic.php?t=21921" class="label-link pull-right">читать дальше…</a>
+                                    </div>
+
+
+                                    <div class="well well-small">
+                                        <span class="label pull-right">31.10.2015</span>
+                                        <span class="label clearfix">Jessica Jones: Русский трейлер</span>
+                                        <br>
+                                        Телеканал Netflix снова приглашает нас посетить Адскую Кухню. На сей раз, нам расскажут о жизни и судьбе Джессики Джонс. Джессика получила свои способности еще в юности, но супергеройская карьера её сложилась крайне неудачно. Девушка страдает от пост-травматического расстройства, чувство вины не даёт ей покоя. Чтобы хоть как-то существовать, и зара...                    <a href="/viewtopic.php?t=16298" class="label-link pull-right">читать дальше…</a>
+                                    </div>
+
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-group" style="margin-left:5px;">
+                        <div class="accordion-heading">
+                            <h5 class="accordion-toggle">
+                                Релизы
+                            </h5>
+                        </div>
+                        <div class="accordion-body collapse in">
+                            <div class="accordion-inner">
+                                <div class="date">
+                                    <span class="label label-important">19.03.2017</span>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=546">
+                                        <img src="/images/posters/546.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23077"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23205"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23076"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23204"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23075"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23203"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=546">Большой куш</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Большой куш (Сезон 1, Серия 2) / Snatch (2017) WEBRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=545">
+                                        <img src="/images/posters/545.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23074"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23202"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23073"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23201"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23072"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23200"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=545">Железный Кулак</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Железный Кулак (Сезон 1, Серия 2) / Marvel&#039;s Iron Fist (2017) WEBRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=455">
+                                        <img src="/images/posters/455.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23071"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23199"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23070"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23198"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=455">Хэп и Леонард</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Хэп и Леонард (Сезон 2, Серия 2) / Hap and Leonard (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="date">
+                                    <span class="label label-important">18.03.2017</span>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=546">
+                                        <img src="/images/posters/546.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23069"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23197"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23068"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23196"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23067"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23195"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=546">Большой куш</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Большой куш (Сезон 1, Серия 1) / Snatch (2017) WEBRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=458">
+                                        <img src="/images/posters/458.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23066"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23194"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23065"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23193"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23064"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23192"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=458">Уловка</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Уловка (Сезон 2, Серия 2) / The Catch (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=536">
+                                        <img src="/images/posters/536.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23063"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23191"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23062"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23190"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23061"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23189"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=536">Родина</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Родина (Сезон 6, Серия 8) / Homeland (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=498">
+                                        <img src="/images/posters/498.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23060"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23188"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23059"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23187"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23058"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23186"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=498">Это мы</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Это мы (Сезон 1, Серия 18) / This Is Us (2016) WEBDLRip | Финал сезона    </div>
+                                </div>
+                                <div class="date">
+                                    <span class="label label-important">17.03.2017</span>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=545">
+                                        <img src="/images/posters/545.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23057"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23185"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23056"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23184"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23055"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23183"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=545">Железный Кулак</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Железный Кулак (Сезон 1, Серия 1) / Marvel&#039;s Iron Fist (2017) WEBRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=432">
+                                        <img src="/images/posters/432.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23054"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23182"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23053"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23181"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23052"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23180"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=432">Колония</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Колония (Сезон 2, Серия 3) / Colony (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=432">
+                                        <img src="/images/posters/432.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23051"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23179"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23050"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23178"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23049"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23177"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=432">Колония</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Колония (Сезон 2, Серия 2) / Colony (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=455">
+                                        <img src="/images/posters/455.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23048"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23176"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23047"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23175"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23046"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23174"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=455">Хэп и Леонард</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Хэп и Леонард (Сезон 2, Серия 1) / Hap and Leonard (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=320">
+                                        <img src="/images/posters/320.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23045"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23173"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23044"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23172"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23043"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23171"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=320">Сонная Лощина</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Сонная Лощина (Сезон 4, Серия 8) / Sleepy Hollow (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="date">
+                                    <span class="label label-important">16.03.2017</span>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=388">
+                                        <img src="/images/posters/388.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23042"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23170"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23041"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23169"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23040"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23168"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=388">Под прикрытием</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Под прикрытием (Сезон 2, Серия 2) / Gangland Undercover (2016) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=98">
+                                        <img src="/images/posters/98.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23039"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23167"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23038"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23166"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23037"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23165"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=98">Бывает и хуже</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Бывает и хуже (Сезон 8, Серия 17) / The Middle (2016) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=537">
+                                        <img src="/images/posters/537.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23036"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23164"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23035"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23163"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23034"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23162"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=537">Легион</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Легион (Сезон 1, Серия 6) / Legion (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=340">
+                                        <img src="/images/posters/340.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23033"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23161"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23032"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23160"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23031"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23159"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=340">100 (Сотня)</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        100 (Сезон 4, Серия 6) / The 100 (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=432">
+                                        <img src="/images/posters/432.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23030"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23158"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23029"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23157"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23028"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23156"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=432">Колония</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Колония (Сезон 2, Серия 1) / Colony (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=320">
+                                        <img src="/images/posters/320.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23027"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23155"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23026"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23154"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23025"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23153"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=320">Сонная Лощина</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Сонная Лощина (Сезон 4, Серия 7) / Sleepy Hollow (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=540">
+                                        <img src="/images/posters/540.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23024"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23152"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23023"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23151"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23022"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23150"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=540">Хорошая борьба</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Хорошая борьба (Сезон 1, Серия 4) / The Good Fight (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=502">
+                                        <img src="/images/posters/502.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23021"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23149"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23020"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23148"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23019"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23147"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=502">МакГайвер</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        МакГайвер (Сезон 1, Серия 18) / MacGyver (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=443">
+                                        <img src="/images/posters/443.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23018"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23146"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23017"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23145"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23016"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23144"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=443">Оттенки синего</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Оттенки синего (Сезон 2, Серия 2) / Shades of Blue (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=256">
+                                        <img src="/images/posters/256.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23015"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23143"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23014"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23142"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23013"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23141"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=256">Элементарно</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Элементарно (Сезон 5, Серия 16) / Elementary (2016) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=539">
+                                        <img src="/images/posters/539.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23012"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23140"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23011"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23139"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23010"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23138"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=539">По друзьям</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        По друзьям (Сезон 1, Серия 4) / Crashing (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=544">
+                                        <img src="/images/posters/544.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23009"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23137"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23008"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23136"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23007"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23135"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=544">24 часа: Наследие</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        24 часа: Наследие (Сезон 1, Серия 3) / 24: Legacy (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=544">
+                                        <img src="/images/posters/544.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23006"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23134"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23005"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23133"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23004"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23132"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=544">24 часа: Наследие</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        24 часа: Наследие (Сезон 1, Серия 2) / 24: Legacy (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=544">
+                                        <img src="/images/posters/544.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23003"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23131"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23002"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23130"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23001"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23129"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=544">24 часа: Наследие</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        24 часа: Наследие (Сезон 1, Серия 1) / 24: Legacy (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="date">
+                                    <span class="label label-important">15.03.2017</span>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=374">
+                                        <img src="/images/posters/374.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23000"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23128"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22999"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23127"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22998"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23126"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=374">Флэш</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Флэш (Сезон 3, Серия 16) / The Flash (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=291">
+                                        <img src="/images/posters/291.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22997"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23125"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22996"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23124"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22995"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23123"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=291">Американцы</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Американцы (Сезон 5, Серия 2) / The Americans (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=541">
+                                        <img src="/images/posters/541.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22994"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23122"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22993"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23121"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22992"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23120"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=541">Заложница</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Заложница (Сезон 1, Серия 3) / Taken (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=299">
+                                        <img src="/images/posters/299.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22991"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23119"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22990"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23118"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22989"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23117"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=299">Мотель Бейтса</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Мотель Бейтса (Сезон 5, Серия 4) / Bates Motel (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=325">
+                                        <img src="/images/posters/325.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22988"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23116"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22987"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23115"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22986"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23114"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=325">Сверхъестественное</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Сверхъестественное (Сезон 12, Серия 15) / Supernatural (2016) WEBDLRip    </div>
+                                </div>
+                                <div class="date">
+                                    <span class="label label-important">14.03.2017</span>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=507">
+                                        <img src="/images/posters/507.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22985"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23113"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22984"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23112"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22983"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23111"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=507">Булл</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Булл (Сезон 1, Серия 16) / Bull (2016) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=538">
+                                        <img src="/images/posters/538.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22982"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23110"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22981"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23109"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22980"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23108"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=538">Большая маленькая ложь</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Большая маленькая ложь (Сезон 1, Серия 4) / Big Little Lies (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=444">
+                                        <img src="/images/posters/444.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22979"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23107"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22978"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23106"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22977"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23105"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=444">Миллиарды</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Миллиарды (Сезон 2, Серия 4) / Billions (2017) WEBRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=458">
+                                        <img src="/images/posters/458.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22976"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23104"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22975"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23103"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22974"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23102"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=458">Уловка</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Уловка (Сезон 2, Серия 1) / The Catch (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=505">
+                                        <img src="/images/posters/505.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22973"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23101"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22972"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23100"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22971"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23099"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=505">Смертельное оружие</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Смертельное оружие (Сезон 1, Серия 17) / Lethal Weapon (2016) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=503">
+                                        <img src="/images/posters/503.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22970"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23098"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22969"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23097"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22968"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23096"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=503">Назначенный преемник</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Назначенный преемник (Сезон 1, Серия 11) / Designated Survivor (2016) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=320">
+                                        <img src="/images/posters/320.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22967"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23095"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22966"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23094"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22965"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23093"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=320">Сонная Лощина</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Сонная Лощина (Сезон 4, Серия 6) / Sleepy Hollow (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="date">
+                                    <span class="label label-important">13.03.2017</span>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=165">
+                                        <img src="/images/posters/165.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22964"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23092"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22963"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23091"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22962"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23090"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=165">Ходячие мертвецы</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Ходячие мертвецы (Сезон 7, Серия 13) / The Walking Dead (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=98">
+                                        <img src="/images/posters/98.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22961"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23089"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22960"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23088"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22959"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23087"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=98">Бывает и хуже</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Бывает и хуже (Сезон 8, Серия 16) / The Middle (2016) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=320">
+                                        <img src="/images/posters/320.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22958"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23086"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22957"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23085"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22956"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23084"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=320">Сонная Лощина</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Сонная Лощина (Сезон 4, Серия 5) / Sleepy Hollow (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=536">
+                                        <img src="/images/posters/536.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22955"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23083"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22954"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23082"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22953"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23081"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=536">Родина</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Родина (Сезон 6, Серия 7) / Homeland (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="date">
+                                    <span class="label label-important">12.03.2017</span>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=498">
+                                        <img src="/images/posters/498.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22952"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23080"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22951"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23079"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22950"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23078"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=498">Это мы</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Это мы (Сезон 1, Серия 17) / This Is Us (2016) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=522">
+                                        <img src="/images/posters/522.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22948"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23076"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22949"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23077"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22947"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23075"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=522">В четырёх стенах</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        В четырёх стенах (Сезон 1, Серия 15) / The Great Indoors (2016) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=543">
+                                        <img src="/images/posters/543.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22946"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23074"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22944"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23072"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22945"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23073"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=543">Бессильные</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Бессильные (Сезон 1, Серия 5) / Powerless (2017) WEBDL     </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=320">
+                                        <img src="/images/posters/320.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22943"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23071"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22942"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23070"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22941"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23069"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=320">Сонная Лощина</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Сонная Лощина (Сезон 4, Серия 4) / Sleepy Hollow (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="date">
+                                    <span class="label label-important">11.03.2017</span>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=444">
+                                        <img src="/images/posters/444.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22940"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23068"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22939"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23067"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22938"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23066"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=444">Миллиарды</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Миллиарды (Сезон 2, Серия 3) / Billions (2017) WEBRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=447">
+                                        <img src="/images/posters/447.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22937"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23065"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22936"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23064"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22935"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23063"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=447">Легенды завтрашнего дня</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Легенды завтрашнего дня (Сезон 2, Серия 13) / DC&#039;s Legends of Tomorrow (2016) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=320">
+                                        <img src="/images/posters/320.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22934"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23062"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22933"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23061"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22932"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23060"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=320">Сонная Лощина</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Сонная Лощина (Сезон 4, Серия 3) / Sleepy Hollow (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="date">
+                                    <span class="label label-important">10.03.2017</span>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=537">
+                                        <img src="/images/posters/537.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22931"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23059"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22930"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23058"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22929"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23057"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=537">Легион</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Легион (Сезон 1, Серия 5) / Legion (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=543">
+                                        <img src="/images/posters/543.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22928"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23056"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22927"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23055"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22926"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23054"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=543">Бессильные</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Бессильные (Сезон 1, Серия 4) / Powerless (2017) WEBRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=443">
+                                        <img src="/images/posters/443.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22925"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23053"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22924"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23052"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22923"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23051"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=443">Оттенки синего</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Оттенки синего (Сезон 2, Серия 1) / Shades of Blue (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=392">
+                                        <img src="/images/posters/392.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22922"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23050"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22921"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23049"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22920"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23048"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=392">Супергёрл</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Супергёрл (Сезон 2, Серия 15) / Supergirl (2016) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=445">
+                                        <img src="/images/posters/445.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22919"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23047"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22918"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23046"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22917"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23045"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=445">Сумеречные охотники</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Сумеречные охотники (Сезон 2, Серия 10) / Shadowhunters (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=374">
+                                        <img src="/images/posters/374.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22916"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23044"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=374">Флэш</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Флэш (Сезон 3, Серия 15) / The Flash (2017) WEBDL     </div>
+                                </div>
+                                <div class="date">
+                                    <span class="label label-important">09.03.2017</span>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=374">
+                                        <img src="/images/posters/374.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22915"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23043"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22914"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23042"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=374">Флэш</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Флэш (Сезон 3, Серия 15) / The Flash (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=320">
+                                        <img src="/images/posters/320.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22913"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23041"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22912"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23040"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22911"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23039"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=320">Сонная Лощина</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Сонная Лощина (Сезон 4, Серия 2) / Sleepy Hollow (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=256">
+                                        <img src="/images/posters/256.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22910"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23038"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22909"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23037"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22908"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23036"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=256">Элементарно</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Элементарно (Сезон 5, Серия 15) / Elementary (2016) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=539">
+                                        <img src="/images/posters/539.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22907"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23035"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22906"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23034"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22905"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23033"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=539">По друзьям</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        По друзьям (Сезон 1, Серия 3) / Crashing (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=291">
+                                        <img src="/images/posters/291.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=22904"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23032"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22903"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23031"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=22902"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23030"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=291">Американцы</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Американцы (Сезон 5, Серия 1) / The Americans (2017) WEBDLRip    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="sideRightW" class="span3">
+                <div id="sideRight">
+                    <div class="accordion" id="serialist">
+                        <div class="accordion-group">
+                            <div class="accordion-heading">
+                                <a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse14">Г</a>
+                            </div>
+                            <div id="collapse14" class="accordion-body collapse">
+                                <div class="accordion-inner">
+                                    <ul>
+                                        <li><a href="/viewforum.php?f=133">Грань</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-group">
+                            <div class="accordion-heading">
+                                <a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse18">И</a>
+                            </div>
+                            <div id="collapse18" class="accordion-body collapse">
+                                <div class="accordion-inner">
+                                    <ul>
+                                        <li><a href="/viewforum.php?f=465">Игра престолов</a></li>
+                                        <li><a href="/viewforum.php?f=531">Изумрудный город</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-group">
+                            <div class="accordion-heading">
+                                <a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse110">Л</a>
+                            </div>
+                            <div id="collapse110" class="accordion-body collapse">
+                                <div class="accordion-inner">
+                                    <ul>
+                                        <li><a href="/viewforum.php?f=246">Лонгмайр</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-group">
+                            <div class="accordion-heading">
+                                <a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse114">П</a>
+                            </div>
+                            <div id="collapse114" class="accordion-body collapse">
+                                <div class="accordion-inner">
+                                    <ul>
+                                        <li><a href="/viewforum.php?f=17">Прочие сериалы</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-group">
+                            <div class="accordion-heading">
+                                <a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse115">Р</a>
+                            </div>
+                            <div id="collapse115" class="accordion-body collapse">
+                                <div class="accordion-inner">
+                                    <ul>
+                                        <li><a href="/viewforum.php?f=254">Революция</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid">
+            <div class="footer">
+                <div class="row-fluid">
+                    <div class="span4">
+                        <div class="navbar tl">
+                            <a href="/" title="На главную NewStudio.TV" class="brand">NewStudio.TV</a>
+                        </div>
+                    </div>
+                    <div class="span4 offset4 tr">
+
+
+                        <a target="_blank" href="/rss.php" tooltip="(ссылка откроется в новом окне)">
+                            <img border="0" src="/templates/newstudio/pic/icon-rss.png" tooltip="rss">
+                        </a>
+                        <a target="_blank" href="http://vk.com/club2682332" tooltip="(ссылка откроется в новом окне)">
+                            <img border="0" src="/templates/newstudio/pic/icon-vk.png" tooltip="вконтакте">
+                        </a>
+
+
+                        <div class="schet">
+                            <a href='http://hit.ua/?x=114090' target='_blank'>
+                                <script language="javascript" type="text/javascript"><!--
+                                Cd=document;Cr="&"+Math.random();Cp="&s=1";
+                                Cd.cookie="b=b";if(Cd.cookie)Cp+="&c=1";
+                                Cp+="&t="+(new Date()).getTimezoneOffset();
+                                if(self!=top)Cp+="&f=1";
+                                //--></script>
+                                <script language="javascript1.1" type="text/javascript"><!--
+                                if(navigator.javaEnabled())Cp+="&j=1";
+                                //--></script>
+                                <script language="javascript1.2" type="text/javascript"><!--
+                                if(typeof(screen)!='undefined')Cp+="&w="+screen.width+"&h="+
+                                    screen.height+"&d="+(screen.colorDepth?screen.colorDepth:screen.pixelDepth);
+                                //--></script>
+                                <script language="javascript" type="text/javascript"><!--
+                                Cd.write("<img src='http://c.hit.ua/hit?i=114090&g=0&x=1"+Cp+Cr+
+                                    "&r="+escape(Cd.referrer)+"&u="+escape(window.location.href)+
+                                    "' border='0' width='88' height='31' "+
+                                    "alt='hit.ua: сейчас на сайте, посетителей и просмотров за сегодня' title='hit.ua: сейчас на сайте, посетителей и просмотров за сегодня'/>");
+                                //--></script>
+                                <noscript>
+                                    <img src='http://c.hit.ua/hit?i=114090&amp;g=0&amp;x=1' border='0' width='88' height='31' alt='hit.ua: сейчас на сайте, посетителей и просмотров за сегодня' title='hit.ua: сейчас на сайте, посетителей и просмотров за сегодня'/>
+                                </noscript>
+                            </a>
+                            <!--LiveInternet counter--><script type="text/javascript"><!--
+                        document.write("<a href='http://www.liveinternet.ru/click' "+
+                            "target=_blank><img src='//counter.yadro.ru/hit?t14.6;r"+
+                            escape(document.referrer)+((typeof(screen)=="undefined")?"":
+                                ";s"+screen.width+"*"+screen.height+"*"+(screen.colorDepth?
+                                    screen.colorDepth:screen.pixelDepth))+";u"+escape(document.URL)+
+                            ";"+Math.random()+
+                            "' alt='' title='LiveInternet: показано число просмотров за 24"+
+                            " часа, посетителей за 24 часа и за сегодня' "+
+                            "border='0' width='88' height='31'><\/a>")
+                        //--></script><!--/LiveInternet-->
+                        </div>
+                    </div>
+                </div>
+                <div class="row-fluid">
+                    <ul class="span2 offset1">
+                        <li><a href="/faq.php">FAQ</a></li>
+                        <!--li><a href="#">Пункт меню3</a></li-->
+                    </ul>
+                    <ul class="span2">
+                        <li><a href="/advertiser.php">Рекламодателям</a></li>
+                        <!--li><a href="#">Пункт меню1</a></li>
+                        <li><a href="#">Пункт меню2</a></li>
+                        <li><a href="#">Пункт меню3</a></li-->
+                    </ul>
+                    <div class="span5" style="margin-top:-38px;">
+
+                        <!-- bigbn.com.ua 468x60-->
+                        <!--ScRipT lanGuagE='jAvAscrIpt'>
+                        //<!--
+                        d=document;
+                        rnd_num = Math.round((Math.random()*10000000));
+                        bbn_l='&'+escape((self!=top)?'f'+d.referrer:'h'+window.location.href);
+                        d.write('<iFrame src=http://ad0.bigmir.net/t.bbn?32789&0&f&'+rnd_num+bbn_l+
+                        ' width=468 height=60 frameborder=0 vspace=0 hspace=0 marginwidth=0 marginheight=0 scrolling=no>');
+                        d.write('<a target=_blank href=http://ad0.bigmir.net/c.bbn?32789&0&'+rnd_num+bbn_l+
+                        '><img src=http://ad0.bigmir.net/t.bbn?32789&0&i&'+rnd_num+bbn_l+' width=468 height=60 border=0 alt="BigBN Common"></a></iFrame>');
+                        //-->
+                        <!--/ScriPt-->
+                        <!-- bigbn.com.ua 468x60-->
+
+                    </div>
+
+
+
+
+
+
+                </div>
+            </div>
+        </div>
+    </div><!--wrap-->
+    <!-- login Modal -->
+    <div id="login" class="modal hide fade" tabindex="5" role="dialog" aria-labelledby="loginLabel" aria-hidden="true">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+            <h3 id="loginLabel">Выберите способ авторизации</h3>
+        </div>
+        <div class="modal-body">
+            <form class="form-signin" action="/login.php" method="post">
+                <input type="text" class="input-block-level" name="login_username" placeholder="Логин" accesskey="l">
+                <input type="password" class="input-block-level" name="login_password" placeholder="Пароль">
+                <label class="checkbox">
+                    <input type="checkbox" value="1" name="autologin" checked="checked">Запомнить меня
+                </label>
+                <input type="hidden" name="login" value="1">
+                <button class="btn btn-large" type="submit">Войти</button>
+                <a class="btn btn-large" href="profile.php?mode=register">Регистрация</a>
+                <a class="btn btn-large" href="profile.php?mode=sendpassword">Забыли пароль?</a>
+            </form>
+        </div>
+        <!-- <div class="modal-footer"></div> -->
+    </div>
+    <script src="/templates/newstudio/js/bootstrap.min.js"></script>
+    <script type="text/javascript">
+        $(function () {
+            $(window).resize(function () {
+                var bwidth = ($("body").outerWidth() - $("#wrap").outerWidth()) / 2;
+                $("#br").css("right", -bwidth);
+                $("#br").css("width", bwidth);
+                $("#bl").css("left", -bwidth);
+                $("#bl").css("width", bwidth);
+            }).resize();
+        });
+    </script>
+
+
+</body>
+
+</html>
+
+</div><!--/body_container-->
+
+</body>
+</html>

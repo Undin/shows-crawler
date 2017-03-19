@@ -40,5 +40,9 @@ ext.libraries = [
         retrofit            : 'com.squareup.retrofit2:retrofit:' + versions.retrofit,
         retrofitJackson     : 'com.squareup.retrofit2:converter-jackson:' + versions.retrofit,
 
-        postgres            : 'org.postgresql:postgresql:9.4.1212'
+        postgres            : 'org.postgresql:postgresql:9.4.1212',
+
+        // test dependencies
+        junit               : 'junit:junit:4.12',
+        mockwebserver       : 'com.squareup.okhttp3:mockwebserver:' + versions.okhttp
 ]
