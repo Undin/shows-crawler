@@ -28,6 +28,9 @@ CREATE TABLE subscriptions (
   PRIMARY KEY (show_id, user_id)
 );
 
+CREATE INDEX users_active_index ON users (active);
+CREATE INDEX shows_title_index ON shows USING btree (title);
+
 INSERT INTO sources (name, url) VALUES
   ('lostfilm', 'http://www.lostfilm.tv/'),
   ('newstudio', 'http://newstudio.tv/');
