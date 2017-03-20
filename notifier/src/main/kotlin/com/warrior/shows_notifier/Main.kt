@@ -37,7 +37,7 @@ object Main {
               users.chat_id
             FROM users
               INNER JOIN subscriptions ON users.id = subscriptions.user_id
-            WHERE subscriptions.show_id = ?;"""
+            WHERE subscriptions.show_id = ? AND users.active = true;"""
     private const val UPDATE_STATEMENT = """
             UPDATE shows
             SET last_season = ?, last_episode = ?
