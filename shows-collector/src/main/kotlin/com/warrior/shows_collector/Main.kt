@@ -26,7 +26,7 @@ object Main {
     fun main(args: Array<String>) {
         val config = findConfig(CONFIG_NAME)
 
-        DriverManager.getConnection(config.dbUrl).use { connection ->
+        DriverManager.getConnection(config.databaseUrl).use { connection ->
             val sources = sourcesIds(config.sources, connection)
             val collectors = collectors(sources)
             collectShows(collectors, connection)

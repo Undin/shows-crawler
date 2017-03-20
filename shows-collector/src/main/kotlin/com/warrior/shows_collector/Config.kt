@@ -8,6 +8,6 @@ import com.fasterxml.jackson.annotation.JsonProperty
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class Config(
-        @JsonProperty("db_url") val dbUrl: String,
+        @JsonProperty("database_url") val databaseUrl: String,
         @JsonProperty("sources") val sources: List<String>
 )
