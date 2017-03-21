@@ -51,11 +51,11 @@ object Main {
     @JvmStatic
     fun main(args: Array<String>) {
         val config = findConfig(CONFIG_FILENAME)
+        val (url, username, password) = config.databaseConfig
 
         notifier = TelegramNotifier(config.telegramToken)
 
-        val connection = DriverManager.getConnection(config.databaseUrl)
-        connection.use { connection ->
+        DriverManager.getConnection(url, username, password).use { connection ->
             val sources = getSources(connection)
             for (source in sources) {
                 when (source.name) {

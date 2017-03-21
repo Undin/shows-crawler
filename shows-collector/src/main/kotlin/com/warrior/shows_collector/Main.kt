@@ -25,8 +25,9 @@ object Main {
     @JvmStatic
     fun main(args: Array<String>) {
         val config = findConfig(CONFIG_NAME)
+        val (url, username, password) = config.databaseConfig
 
-        DriverManager.getConnection(config.databaseUrl).use { connection ->
+        DriverManager.getConnection(url, username, password).use { connection ->
             val sources = sourcesIds(config.sources, connection)
             val collectors = collectors(sources)
             collectShows(collectors, connection)
