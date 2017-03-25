@@ -14,7 +14,6 @@ impl TelegramApi {
 
     pub fn get_updates(&self, timeout: u32, limit: u32, offset: i32) -> Result<UpdateResponse> {
         let url = format!("{}/getUpdates?timeout={}&limit={}&offset={}", self.base_url, timeout, limit, offset);
-        println!("--> {}", url);
         let result: Result<Response> = self.client.get(&url).send();
         match result {
             Ok(mut response) => response.json(),
@@ -27,7 +26,6 @@ impl TelegramApi {
         params.insert("chat_id", chat_id.to_string());
         params.insert("text", text.to_owned());
         let url = format!("{}/sendMessage", self.base_url);
-        println!("--> {}", url);
         let response = self.client.post(&url)
             .form(&params)
             .send();

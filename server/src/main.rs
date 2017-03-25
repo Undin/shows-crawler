@@ -1,10 +1,15 @@
-extern crate config;
 extern crate diesel;
 extern crate itertools;
+#[macro_use]
+extern crate log;
+extern crate log4rs;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde_yaml;
 extern crate server;
 extern crate threadpool;
 
-use config::{Config, File, FileFormat};
 use diesel::prelude::*;
 use itertools::Itertools;
 use server::Components;
@@ -13,28 +18,34 @@ use server::schema::*;
 use server::telegram_api::{Chat, ChatType, Message, Update, User};
 use std::cmp::min;
 use std::convert::Into;
+use std::fs::File;
+use std::io::BufReader;
 use std::str::SplitWhitespace;
-use std::env;
 use threadpool::ThreadPool;
 
+#[derive(Deserialize, Debug)]
+struct Config {
+    pub bot_token: String,
+    pub database_url: String,
+    #[serde(default = "default_threads")]
+    pub threads: usize,
+    #[serde(default = "default_update_timeout")]
+    pub update_timeout: u32,
+    #[serde(default = "default_update_batch_size")]
+    pub update_batch_size: u32
+}
+
 fn main() {
-    let mut config = Config::new();
-    config.merge(File::new("notifier-server-config.yaml", FileFormat::Yaml))
-        .expect("can't find notifier-server-config.yaml file");
+    log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
+    let config = read_config();
 
-    let bot_token = config.get_str("bot_token").expect("'bot_token' variable must be set");
-    let database_url = config.get_str("database_url").expect("'database_url' must be set");
-    let threads = config.get_int("threads").unwrap_or(1) as usize;
-    let update_timeout = config.get_int("update_timeout").unwrap_or(20) as u32;
-    let update_batch_size = config.get_int("update_batch_size").unwrap_or(100) as u32;
-
-    let components = Components::new(bot_token, database_url);
-    let thread_pool = ThreadPool::new_with_name("thread-pool".into(), threads);
+    let components = Components::new(config.bot_token, config.database_url);
+    let thread_pool = ThreadPool::new_with_name("thread-pool".into(), config.threads);
 
     let mut update_id = 0i32;
 
     loop {
-        match components.api.get_updates(update_timeout, update_batch_size, update_id) {
+        match components.api.get_updates(config.update_timeout, config.update_batch_size, update_id) {
             Ok(update_response) => {
                 let updates: Vec<Update> = update_response.result;
                 for update in updates {
@@ -43,10 +54,20 @@ fn main() {
                     thread_pool.execute(move || process_update(components, update));
                 }
             }
-            Err(error) => println!("{}", error),
+            Err(error) => error!("{}", error),
         }
     }
 }
+
+fn read_config() -> Config {
+    let config_file = File::open("notifier-server-config.yaml")
+        .expect("can't find notifier-server-config.yaml file");
+    serde_yaml::from_reader(BufReader::new(config_file)).unwrap()
+}
+
+fn default_threads() -> usize { 1 }
+fn default_update_timeout() -> u32 { 20 }
+fn default_update_batch_size() -> u32 { 100 }
 
 fn process_update(components: Components, update: Update) {
     for message in update.message {
@@ -56,7 +77,7 @@ fn process_update(components: Components, update: Update) {
                 from: Some(User { id: user_id, first_name }),
                 text: Some(user_text), ..
             } => {
-                println!("{}", user_text);
+                info!("user {}: {}", user_id, user_text);
                 let mut iter: SplitWhitespace = user_text.split_whitespace();
                 let command = iter.next();
                 match command {
@@ -67,17 +88,17 @@ fn process_update(components: Components, update: Update) {
                     Some("/subscribe") => on_subscribe(&components, chat_id, user_id, &mut iter),
                     Some("/unsubscribe") => on_unsubscribe(&components, chat_id, user_id, &mut iter),
                     _ => {
-                        println!("unknown command");
+                        warn!("unknown command");
                     }
                 }
             }
-            _ => println!("skip message"),
+            _ => debug!("skip message"),
         }
     }
 }
 
 fn on_start(components: &Components, chat_id: i64, user_id: i32, user_name: String) {
-    println!("on start");
+    debug!("on start");
 
     use server::models::User;
     use server::schema::users::dsl::{active, id, users};
@@ -95,7 +116,7 @@ fn on_start(components: &Components, chat_id: i64, user_id: i32, user_name: Stri
 }
 
 fn on_stop(components: &Components, user_id: i32) {
-    println!("on stop");
+    debug!("on stop");
 
     use server::schema::users::dsl::*;
 
@@ -107,7 +128,7 @@ fn on_stop(components: &Components, user_id: i32) {
 }
 
 fn on_sources_command(components: &Components, chat_id: i64) {
-    println!("sources command");
+    debug!("sources command");
 
     use server::schema::sources::dsl::*;
 
@@ -121,7 +142,7 @@ fn on_sources_command(components: &Components, chat_id: i64) {
 }
 
 fn on_shows_command(components: &Components, chat_id: i64, message_iter: &mut SplitWhitespace) {
-    println!("sources command");
+    debug!("sources command");
 
     let source_name = message_iter.next();
     if let Some(source_name) = source_name {
@@ -141,7 +162,7 @@ fn on_shows_command(components: &Components, chat_id: i64, message_iter: &mut Sp
                     components.api.send_message(chat_id, &joined_titles);
                 }
             },
-            Err(error) => println!("{}", error),
+            Err(error) => error!("{}", error),
         }
     } else {
         components.api.send_message(chat_id, "Usage: /shows <source>");
@@ -149,7 +170,7 @@ fn on_shows_command(components: &Components, chat_id: i64, message_iter: &mut Sp
 }
 
 fn on_subscribe(components: &Components, chat_id: i64, user_id: i32, message_iter: &mut SplitWhitespace) {
-    println!("subscribe command");
+    debug!("subscribe command");
 
     let source_name = message_iter.next();
     let show_title = message_iter.join(" ");
@@ -169,12 +190,12 @@ fn on_subscribe(components: &Components, chat_id: i64, user_id: i32, message_ite
                         Ok(_) => {
                             components.api.send_message(chat_id, &format!("subscription ({}, {}) created!", source_name, show_title));
                         },
-                        Err(error) => println!("{}", error)
+                        Err(error) => error!("{}", error)
                     }
                 },
                 Err(error) => {
                     components.api.send_message(chat_id, &format!("({}, {}) isn't found", source_name, show_title));
-                    println!("{}", error);
+                    info!("{}", error);
                 }
             }
         },
@@ -185,7 +206,7 @@ fn on_subscribe(components: &Components, chat_id: i64, user_id: i32, message_ite
 }
 
 fn on_unsubscribe(components: &Components, chat_id: i64, user_id: i32, message_iter: &mut SplitWhitespace) {
-    println!("subscribe command");
+    debug!("subscribe command");
 
     let source_name = message_iter.next();
     let show_title = message_iter.join(" ");
@@ -213,7 +234,7 @@ fn on_unsubscribe(components: &Components, chat_id: i64, user_id: i32, message_i
                 Ok(0) => {
                     components.api.send_message(chat_id, &format!("subscription ({}, {}) not found", source_name, show_title));
                 },
-                res @ _ => println!("{:?}", res),
+                res @ _ => error!("{:?}", res),
             }
         },
         _ => {
