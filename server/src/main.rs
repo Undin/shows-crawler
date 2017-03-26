@@ -13,7 +13,7 @@ extern crate threadpool;
 use diesel::prelude::*;
 use itertools::Itertools;
 use server::Components;
-use server::models::{Show, Source, Subscription};
+use server::models::{Show, Subscription};
 use server::schema::*;
 use server::telegram_api::{Chat, ChatType, Message, Update, User};
 use std::cmp::min;
@@ -130,11 +130,12 @@ fn on_stop(components: &Components, user_id: i32) {
 fn on_sources_command(components: &Components, chat_id: i64) {
     debug!("sources command");
 
-    use server::schema::sources::dsl::*;
+    use server::schema::shows::dsl::*;
 
     let ref connection = *components.get_connection();
-    let query = sources.select(name)
-        .order(name.asc());
+    let query = shows.select(source_name)
+        .distinct()
+        .order(source_name.asc());
     if let Ok(source_names) = query.load::<String>(connection) {
         let all_sources = source_names.iter().join("\n");
         components.api.send_message(chat_id, &all_sources);
@@ -144,13 +145,14 @@ fn on_sources_command(components: &Components, chat_id: i64) {
 fn on_shows_command(components: &Components, chat_id: i64, message_iter: &mut SplitWhitespace) {
     debug!("sources command");
 
-    let source_name = message_iter.next();
-    if let Some(source_name) = source_name {
+    use server::schema::shows::dsl::*;
+
+    let source = message_iter.next();
+    if let Some(source) = source {
         let ref connection = *components.get_connection();
-        let query = sources::table.inner_join(shows::table)
-            .select(shows::title)
-            .filter(sources::name.eq(source_name))
-            .order(shows::title.asc());
+        let query = shows.select(title)
+            .filter(source_name.eq(source))
+            .order(title.asc());
         match query.load::<String>(connection) {
             Ok(ref titles) if titles.is_empty() => {
                 components.api.send_message(chat_id, "Nothing found");
@@ -172,14 +174,15 @@ fn on_shows_command(components: &Components, chat_id: i64, message_iter: &mut Sp
 fn on_subscribe(components: &Components, chat_id: i64, user_id: i32, message_iter: &mut SplitWhitespace) {
     debug!("subscribe command");
 
-    let source_name = message_iter.next();
+    use server::schema::shows::dsl::*;
+
+    let source = message_iter.next();
     let show_title = message_iter.join(" ");
-    match source_name {
-        Some(source_name) if !show_title.is_empty() => {
+    match source {
+        Some(source) if !show_title.is_empty() => {
             let ref connection = *components.get_connection();
-            let query = sources::table.inner_join(shows::table)
-                .select(shows::id)
-                .filter(sources::name.eq(source_name).and(shows::title.eq(&show_title)));
+            let query = shows.select(id)
+                .filter(source_name.eq(source).and(title.eq(&show_title)));
             match query.first::<i64>(connection) {
                 Ok(show_id) => {
                     let subscription = Subscription::new(show_id, user_id);
@@ -188,13 +191,13 @@ fn on_subscribe(components: &Components, chat_id: i64, user_id: i32, message_ite
                         .execute(connection);
                     match insertion_result {
                         Ok(_) => {
-                            components.api.send_message(chat_id, &format!("subscription ({}, {}) created!", source_name, show_title));
+                            components.api.send_message(chat_id, &format!("subscription ({}, {}) created!", source, show_title));
                         },
                         Err(error) => error!("{}", error)
                     }
                 },
                 Err(error) => {
-                    components.api.send_message(chat_id, &format!("({}, {}) isn't found", source_name, show_title));
+                    components.api.send_message(chat_id, &format!("({}, {}) isn't found", source, show_title));
                     info!("{}", error);
                 }
             }
@@ -224,8 +227,7 @@ fn on_unsubscribe(components: &Components, chat_id: i64, user_id: i32, message_i
                        FROM users
                          INNER JOIN subscriptions ON users.id = subscriptions.user_id
                          INNER JOIN shows ON subscriptions.show_id = shows.id
-                         INNER JOIN sources ON sources.id = shows.source_id
-                       WHERE users.id = {} AND sources.name = '{}' AND shows.title = '{}');",
+                       WHERE users.id = {} AND shows.source_name = '{}' AND shows.title = '{}');",
                 user_id, source_name, show_title);
             match connection.execute(&command) {
                 Ok(1) => {

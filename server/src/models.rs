@@ -1,4 +1,4 @@
-use schema::{users, sources, shows, subscriptions};
+use schema::{users, shows, subscriptions};
 
 #[derive(new, Identifiable, Queryable, Insertable, Associations, Debug)]
 #[has_many(subscriptions)]
@@ -11,23 +11,13 @@ pub struct User {
 }
 
 #[derive(new, Identifiable, Queryable, Insertable, Associations, Debug)]
-#[has_many(shows)]
-#[table_name="sources"]
-pub struct Source {
-    pub id: i64,
-    pub name: String,
-    pub url: String
-}
-
-#[derive(new, Identifiable, Queryable, Insertable, Associations, Debug)]
 #[has_many(subscriptions)]
-#[belongs_to(Source)]
 #[table_name="shows"]
 pub struct Show {
     pub id: i64,
-    pub source_id: i64,
     pub raw_id: i64,
     pub title: String,
+    pub source_name: String,
     pub local_title: Option<String>,
     pub last_season: Option<i32>,
     pub last_episode: Option<i32>,

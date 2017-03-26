@@ -15,10 +15,7 @@ import java.util.regex.Pattern
 /**
  * Created by warrior on 10/29/16.
  */
-class LostFilmCrawler(
-        sourceId: Int,
-        private val contentUrl: String? = null
-) : AbstractCrawler(sourceId) {
+class LostFilmCrawler(private val contentUrl: String? = null) : Crawler {
 
     private val logger = LogManager.getLogger(javaClass)
 

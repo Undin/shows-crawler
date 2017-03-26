@@ -14,7 +14,7 @@ import org.junit.Test
  */
 class NewStudioCollectorTests {
 
-    private val SOURCE_ID = 0;
+    private val SOURCE_NAME = "newstudio";
 
     private val ROOT = "/"
     private val FRINGE = "/viewforum.php?f=133"
@@ -54,18 +54,18 @@ class NewStudioCollectorTests {
     @Test
     fun newStudioCollectorTest() {
         val baseUrl = server.url(ROOT).toString()
-        val collector = NewStudioCollector(SOURCE_ID, baseUrl)
+        val collector = NewStudioCollector(SOURCE_NAME, baseUrl)
         val shows = collector.collect()
         assertThat(shows, equalTo(listOf(
-                Show(SOURCE_ID, 465, "Game of Thrones", "Игра Престолов", 6, 10),
-                Show(SOURCE_ID, 254, "Revolution", "Революция", 1, 15))
+                Show(SOURCE_NAME, 465, "Game of Thrones", "Игра Престолов", 6, 10),
+                Show(SOURCE_NAME, 254, "Revolution", "Революция", 1, 15))
         ))
     }
 
     @Test
     fun errorTest() {
         val baseUrl = server.url("/wrong_path").toString()
-        val collector = NewStudioCollector(SOURCE_ID, baseUrl)
+        val collector = NewStudioCollector(SOURCE_NAME, baseUrl)
         val shows = collector.collect()
         assertThat(shows, equalTo(emptyList()))
     }

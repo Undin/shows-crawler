@@ -10,7 +10,7 @@ import java.util.regex.Pattern
 /**
  * Created by warrior on 10/29/16.
  */
-class NewStudioCrawler(sourceId: Int) : AbstractCrawler(sourceId) {
+class NewStudioCrawler : Crawler {
 
     private val logger = LogManager.getLogger(javaClass)
 

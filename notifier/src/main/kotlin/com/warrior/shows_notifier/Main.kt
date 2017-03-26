@@ -8,7 +8,6 @@ import com.warrior.shows_notifier.crawlers.Crawler
 import com.warrior.shows_notifier.crawlers.LostFilmCrawler
 import com.warrior.shows_notifier.crawlers.NewStudioCrawler
 import com.warrior.shows_notifier.entities.Episode
-import com.warrior.shows_notifier.entities.Source
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Supplier
 import java.io.File
@@ -31,7 +30,7 @@ object Main {
             SELECT
               id, last_season, last_episode
             FROM shows
-            WHERE shows.source_id = %d AND shows.title = ?;"""
+            WHERE shows.source_name = '%s' AND shows.title = ?;"""
     private const val SUBSCRIPTION_QUERY = """
             SELECT
               users.chat_id
@@ -58,10 +57,10 @@ object Main {
         DriverManager.getConnection(url, username, password).use { connection ->
             val sources = getSources(connection)
             for (source in sources) {
-                when (source.name) {
-                    "lostfilm" -> crawlNewSeriesAndNotify(connection, source, LostFilmCrawler(source.id))
-                    "newstudio" -> crawlNewSeriesAndNotify(connection, source, NewStudioCrawler(source.id))
-                    else -> logger.warn("Unknown source '${source.name}'. Do nothing")
+                when (source) {
+                    "lostfilm" -> crawlNewSeriesAndNotify(connection, source, LostFilmCrawler())
+                    "newstudio" -> crawlNewSeriesAndNotify(connection, source, NewStudioCrawler())
+                    else -> logger.warn("Crawler for $source is not implemented yet. Do nothing")
                 }
             }
         }
@@ -69,14 +68,14 @@ object Main {
         notifier.shutdown(5, TimeUnit.MINUTES)
     }
 
-    private fun getSources(connection: Connection): ArrayList<Source> {
+    private fun getSources(connection: Connection): List<String> {
         return connection.createStatement().use { statement ->
-            val queryResult = statement.executeQuery("SELECT id, name, url FROM sources;")
+            val queryResult = statement.executeQuery("SELECT DISTINCT source_name FROM shows;")
 
-            val sources = ArrayList<Source>()
+            val sources = ArrayList<String>()
             val builder = StringBuilder("sources:")
             while (queryResult.next()) {
-                val source = loadSource(queryResult)
+                val source = queryResult.getString("source_name")
                 sources += source
                 builder.append("\n- ")
                         .append(source)
@@ -86,10 +85,10 @@ object Main {
         }
     }
 
-    private fun crawlNewSeriesAndNotify(connection: Connection, source: Source, crawler: Crawler) {
+    private fun crawlNewSeriesAndNotify(connection: Connection, source: String, crawler: Crawler) {
         val episodes = crawler.episodes()
         val episodesMap = episodes.groupBy({ it.showTitle }) { (_, season, episodeNumber) -> Episode(season, episodeNumber) }
-        val showStatement = connection.prepareStatement(SHOW_QUERY.format(crawler.sourceId()))
+        val showStatement = connection.prepareStatement(SHOW_QUERY.format(source))
         val subscriptionStatement = connection.prepareStatement(SUBSCRIPTION_QUERY)
         val updateStatement = connection.prepareStatement(UPDATE_STATEMENT)
         try {
@@ -128,7 +127,7 @@ object Main {
         }
     }
 
-    private fun notify(chatIds: List<Long>, title: String, source: Source, newEpisodes: List<Episode>) {
+    private fun notify(chatIds: List<Long>, title: String, source: String, newEpisodes: List<Episode>) {
         for (chatId in chatIds) {
             notifier.notify(chatId, title, source, newEpisodes)
         }
@@ -149,11 +148,5 @@ object Main {
         }
         val mapper = ObjectMapper(YAMLFactory()).registerKotlinModule()
         return mapper.readValue(stream)
-    }
-
-    private fun loadSource(resultSet: ResultSet): Source {
-        return Source(resultSet.getInt("id"),
-                resultSet.getString("name"),
-                resultSet.getString("url"))
     }
 }

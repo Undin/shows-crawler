@@ -7,5 +7,4 @@ import com.warrior.shows_notifier.entities.ShowEpisode
  */
 interface Crawler {
     fun episodes(): List<ShowEpisode>
-    fun sourceId(): Int
 }

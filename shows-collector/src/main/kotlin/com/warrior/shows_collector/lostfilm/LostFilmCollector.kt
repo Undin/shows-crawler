@@ -14,7 +14,7 @@ import java.util.*
 /**
  * Created by warrior on 2/19/17.
  */
-class LostFilmCollector(private val lostFilmId: Int) : ShowCollector {
+class LostFilmCollector(private val sourceName: String) : ShowCollector {
 
     private val logger = LogManager.getLogger(javaClass)
 
@@ -47,7 +47,7 @@ class LostFilmCollector(private val lostFilmId: Int) : ShowCollector {
                     if (lostfilmShows.isEmpty()) {
                         break
                     } else {
-                        shows += lostfilmShows.map { it.toShow(lostFilmId) }
+                        shows += lostfilmShows.map { it.toShow(sourceName) }
                         offset += 10
                         continue
                     }

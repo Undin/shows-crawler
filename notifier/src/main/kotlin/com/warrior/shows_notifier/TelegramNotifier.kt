@@ -1,7 +1,6 @@
 package com.warrior.shows_notifier
 
 import com.warrior.shows_notifier.entities.Episode
-import com.warrior.shows_notifier.entities.Source
 import okhttp3.*
 import okhttp3.logging.HttpLoggingInterceptor
 import org.apache.logging.log4j.LogManager
@@ -9,6 +8,11 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 class TelegramNotifier(telegramToken: String) : Callback {
+
+    private val SOURCES_URLS = mapOf(
+            "lostfilm" to "http://www.lostfilm.tv/",
+            "newstudio" to "http://newstudio.tv/"
+    )
 
     private val logger = LogManager.getLogger(javaClass)
     private val url: HttpUrl = HttpUrl.parse("https://api.telegram.org/bot$telegramToken/sendMessage")
@@ -22,13 +26,14 @@ class TelegramNotifier(telegramToken: String) : Callback {
                 .build()
     }
 
-    fun notify(chatId: Long, title: String, source: Source, episodes: List<Episode>) {
+    fun notify(chatId: Long, title: String, source: String, episodes: List<Episode>) {
         val (season, episodeNumber) = episodes[0]
+        val sourceUrl = SOURCES_URLS[source] ?: ""
         val text = if (episodes.size == 1) {
-            "$title ${formatEpisodeString(season, episodeNumber)}\n${source.url}"
+            "$title ${formatEpisodeString(season, episodeNumber)}\n$sourceUrl"
         } else {
             val (lastSeason, lastEpisodeNumber) = episodes.last()
-            "$title ${formatEpisodeString(season, episodeNumber)} - ${formatEpisodeString(lastSeason, lastEpisodeNumber)}\n${source.url}"
+            "$title ${formatEpisodeString(season, episodeNumber)} - ${formatEpisodeString(lastSeason, lastEpisodeNumber)}\n$sourceUrl"
         }
 
         val body = FormBody.Builder()

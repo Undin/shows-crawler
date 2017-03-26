@@ -13,7 +13,7 @@ internal data class LostFilmShow(
         @JsonProperty("title_orig") val title: String,
         @JsonProperty("title") val localTitle: String
 ) {
-    fun toShow(sourceId: Int): Show = Show(sourceId, rawId.toInt(), title, localTitle)
+    fun toShow(sourceName: String): Show = Show(sourceName, rawId.toInt(), title, localTitle)
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)

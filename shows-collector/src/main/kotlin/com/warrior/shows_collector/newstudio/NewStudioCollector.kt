@@ -12,7 +12,7 @@ import java.util.*
  * Created by warrior on 2/19/17.
  */
 class NewStudioCollector(
-        private val newStudioId: Int,
+        private val sourceName: String,
         private val baseUrl: String = BASE_URL) : ShowCollector {
 
     private val EXCLUDED_ELEMENTS = setOf(
@@ -36,7 +36,7 @@ class NewStudioCollector(
                 val showDetails = ShowDetailsExtractor.getShowDetails(URI(baseUrl).resolve(href).toString())
                 if (showDetails != null) {
                     val (title, localTitle, season, episodeNumber) = showDetails
-                    val show = Show(newStudioId, rawId, title, localTitle, season, episodeNumber)
+                    val show = Show(sourceName, rawId, title, localTitle, season, episodeNumber)
                     println(show)
                     shows += show
                 } else {
