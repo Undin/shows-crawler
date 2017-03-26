@@ -4,6 +4,8 @@ extern crate derive_new;
 extern crate diesel;
 #[macro_use]
 extern crate diesel_codegen;
+#[macro_use]
+extern crate log;
 extern crate r2d2;
 extern crate r2d2_diesel;
 extern crate reqwest;
@@ -43,5 +45,12 @@ impl Components {
     pub fn get_connection(&self) -> PooledConnection<ConnectionManager<PgConnection>> {
         self.connection_pool.get()
             .expect("Unable get connection from connection pool")
+    }
+
+    pub fn send_message(&self, chat_id: i64, text: &str) {
+        debug!("Send message. chat_id: {}, message: {}", chat_id, text);
+        if let Err(error) = self.api.send_message(chat_id, text) {
+            error!("Can't send message: {}", error);
+        }
     }
 }

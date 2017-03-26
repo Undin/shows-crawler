@@ -13,7 +13,7 @@ extern crate threadpool;
 use diesel::prelude::*;
 use itertools::Itertools;
 use server::Components;
-use server::models::{Show, Subscription};
+use server::models::Subscription;
 use server::schema::*;
 use server::telegram_api::{Chat, ChatType, Message, Update, User};
 use std::cmp::min;
@@ -116,7 +116,7 @@ fn on_service_message_command(components: &Components, user_id: i32, text: &str)
             match chat_ids_query.load(connection) {
                 Ok(chat_ids) => {
                     for cid in chat_ids  {
-                        components.api.send_message(cid, &text);
+                        components.send_message(cid, &text);
                     }
                 },
                 Err(error) => error!("Failed on loading users: {}", error),
@@ -135,7 +135,7 @@ fn on_start(components: &Components, chat_id: i64, user_id: i32, user_name: Stri
     use server::models::User;
     use server::schema::users::dsl::{active, id, users};
 
-    components.api.send_message(chat_id, &format!("Hello, {}!", &user_name));
+    components.send_message(chat_id, &format!("Hello, {}!", &user_name));
     let ref connection = *components.get_connection();
     let user = User::new(user_id, user_name, chat_id, true, false);
     if let Err(error) = diesel::insert(&user)
@@ -173,7 +173,7 @@ fn on_sources_command(components: &Components, chat_id: i64) {
     match query.load::<String>(connection) {
         Ok(source_names) => {
             let all_sources = source_names.iter().join("\n");
-            components.api.send_message(chat_id, &all_sources);
+            components.send_message(chat_id, &all_sources);
         },
         Err(error) => error!("Failed on sources loading: {}", error),
     }
@@ -192,19 +192,19 @@ fn on_shows_command(components: &Components, chat_id: i64, text: &str) {
             .order(title.asc());
         match query.load::<String>(connection) {
             Ok(ref titles) if titles.is_empty() => {
-                components.api.send_message(chat_id, "Nothing found");
+                components.send_message(chat_id, "Nothing found");
             },
             Ok(titles) => {
                 let max_lines = 100;
                 for i in 0 .. (titles.len() + max_lines - 1) / max_lines {
                     let joined_titles = titles[max_lines * i .. min(max_lines * (i + 1), titles.len())].iter().join("\n");
-                    components.api.send_message(chat_id, &joined_titles);
+                    components.send_message(chat_id, &joined_titles);
                 }
             },
             Err(error) => error!("Failed on shows loading of {}: {}", source, error),
         }
     } else {
-        components.api.send_message(chat_id, "Usage: /shows <source>");
+        components.send_message(chat_id, "Usage: /shows <source>");
     }
 }
 
@@ -229,19 +229,19 @@ fn on_subscribe(components: &Components, chat_id: i64, user_id: i32, text: &str)
                         .execute(connection);
                     match insertion_result {
                         Ok(_) => {
-                            components.api.send_message(chat_id, &format!("subscription ({}, {}) created!", source, show_title));
+                            components.send_message(chat_id, &format!("subscription ({}, {}) created!", source, show_title));
                         },
                         Err(error) => error!("{}", error)
                     }
                 },
                 Err(error) => {
-                    components.api.send_message(chat_id, &format!("({}, {}) isn't found", source, show_title));
+                    components.send_message(chat_id, &format!("({}, {}) isn't found", source, show_title));
                     info!("{}", error);
                 }
             }
         },
         _ => {
-            components.api.send_message(chat_id, "Usage: /subscribe <source> <show_title>");
+            components.send_message(chat_id, "Usage: /subscribe <source> <show_title>");
         }
     }
 }
@@ -265,7 +265,7 @@ fn on_subscriptions_command(components: &Components, chat_id: i64, user_id: i32)
                     .iter()
                     .map(|x| format!("({}, {})", x.0, x.1))
                     .join("\n");
-                components.api.send_message(chat_id, &message);
+                components.send_message(chat_id, &message);
             }
         },
         Err(error) => {
@@ -298,16 +298,16 @@ fn on_unsubscribe(components: &Components, chat_id: i64, user_id: i32, text: &st
                 user_id, source_name, show_title);
             match connection.execute(&command) {
                 Ok(1) => {
-                    components.api.send_message(chat_id, &format!("subscription ({}, {}) removed", source_name, show_title));
+                    components.send_message(chat_id, &format!("subscription ({}, {}) removed", source_name, show_title));
                 },
                 Ok(0) => {
-                    components.api.send_message(chat_id, &format!("subscription ({}, {}) not found", source_name, show_title));
+                    components.send_message(chat_id, &format!("subscription ({}, {}) not found", source_name, show_title));
                 },
                 res @ _ => error!("{:?}", res),
             }
         },
         _ => {
-            components.api.send_message(chat_id, "Usage: /unsubscribe <source> <show_title>");
+            components.send_message(chat_id, "Usage: /unsubscribe <source> <show_title>");
         }
     }
 }
