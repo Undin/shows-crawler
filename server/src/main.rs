@@ -86,6 +86,7 @@ fn process_update(components: Components, update: Update) {
                     Some("/sources") => on_sources_command(&components, chat_id),
                     Some("/shows") => on_shows_command(&components, chat_id, &mut iter),
                     Some("/subscribe") => on_subscribe(&components, chat_id, user_id, &mut iter),
+                    Some("/subscriptions") => on_subscriptions_command(&components, chat_id, user_id),
                     Some("/unsubscribe") => on_unsubscribe(&components, chat_id, user_id, &mut iter),
                     _ => {
                         warn!("unknown command");
@@ -204,6 +205,34 @@ fn on_subscribe(components: &Components, chat_id: i64, user_id: i32, message_ite
         },
         _ => {
             components.api.send_message(chat_id, "Usage: /subscribe <source> <show_title>");
+        }
+    }
+}
+
+fn on_subscriptions_command(components: &Components, chat_id: i64, user_id: i32) {
+    debug!("subscriptions command");
+
+    use server::schema::shows::dsl::{source_name, title};
+
+    let query = subscriptions::table.inner_join(shows::table)
+        .select((source_name, title))
+        .filter(subscriptions::user_id.eq(user_id))
+        .order((source_name, title).asc());
+
+    let ref connection = *components.get_connection();
+    match query.load::<(String, String)>(connection) {
+        Ok(subscriptions) => {
+            let max_lines = 100;
+            for i in 0 .. (subscriptions.len() + max_lines - 1) / max_lines {
+                let message = subscriptions[max_lines * i .. min(max_lines * (i + 1), subscriptions.len())]
+                    .iter()
+                    .map(|x| format!("({}, {})", x.0, x.1))
+                    .join("\n");
+                components.api.send_message(chat_id, &message);
+            }
+        },
+        Err(error) => {
+            error!("{}", error);
         }
     }
 }

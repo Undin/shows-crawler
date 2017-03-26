@@ -24,7 +24,7 @@ pub struct Show {
 }
 
 #[derive(new, Queryable, Insertable, Associations, Debug)]
-#[belongs_to(User, Show)]
+#[belongs_to(Show, User)]
 #[table_name="subscriptions"]
 pub struct Subscription {
     pub show_id: i64,
