@@ -20,7 +20,6 @@ use std::cmp::min;
 use std::convert::Into;
 use std::fs::File;
 use std::io::BufReader;
-use std::str::SplitWhitespace;
 use threadpool::ThreadPool;
 
 #[derive(Deserialize, Debug)]
@@ -78,18 +77,22 @@ fn process_update(components: Components, update: Update) {
                 text: Some(user_text), ..
             } => {
                 info!("user {}: {}", user_id, user_text);
-                let mut iter: SplitWhitespace = user_text.split_whitespace();
-                let command = iter.next();
+                let (command, text) = match user_text.find(' ') {
+                    Some(index) => user_text.split_at(index),
+                    None => (user_text.as_str(), "")
+                };
+
                 match command {
-                    Some("/start") => on_start(&components, chat_id, user_id, first_name),
-                    Some("/stop") => on_stop(&components, user_id),
-                    Some("/sources") => on_sources_command(&components, chat_id),
-                    Some("/shows") => on_shows_command(&components, chat_id, &mut iter),
-                    Some("/subscribe") => on_subscribe(&components, chat_id, user_id, &mut iter),
-                    Some("/subscriptions") => on_subscriptions_command(&components, chat_id, user_id),
-                    Some("/unsubscribe") => on_unsubscribe(&components, chat_id, user_id, &mut iter),
+                    "/service_message" => on_service_message_command(&components, user_id, text),
+                    "/start" => on_start(&components, chat_id, user_id, first_name),
+                    "/stop" => on_stop(&components, user_id),
+                    "/sources" => on_sources_command(&components, chat_id),
+                    "/shows" => on_shows_command(&components, chat_id, text),
+                    "/subscribe" => on_subscribe(&components, chat_id, user_id, text),
+                    "/subscriptions" => on_subscriptions_command(&components, chat_id, user_id),
+                    "/unsubscribe" => on_unsubscribe(&components, chat_id, user_id, text),
                     _ => {
-                        warn!("unknown command");
+                        warn!("unknown command '{}'", command);
                     }
                 }
             }
@@ -98,15 +101,43 @@ fn process_update(components: Components, update: Update) {
     }
 }
 
+fn on_service_message_command(components: &Components, user_id: i32, text: &str) {
+    debug!("service message command");
+
+    use server::schema::users::dsl::*;
+    let query = users.select(superuser)
+        .filter(id.eq(user_id));
+
+    let ref connection = *components.get_connection();
+    match query.first(connection) {
+        Ok(true) => {
+            info!("service message from user {}: \"{}\"", user_id, text);
+            let chat_ids_query = users.select(chat_id);
+            match chat_ids_query.load(connection) {
+                Ok(chat_ids) => {
+                    for cid in chat_ids  {
+                        components.api.send_message(cid, &text);
+                    }
+                },
+                Err(error) => error!("Failed on loading users: {}", error),
+            }
+        },
+        Ok(false) => {
+            info!("User {} isn't superuser. Do nothing", user_id)
+        },
+        Err(error) => error!("Failed on loading user {}: {}", user_id, error),
+    }
+}
+
 fn on_start(components: &Components, chat_id: i64, user_id: i32, user_name: String) {
-    debug!("on start");
+    debug!("start command");
 
     use server::models::User;
     use server::schema::users::dsl::{active, id, users};
 
     components.api.send_message(chat_id, &format!("Hello, {}!", &user_name));
     let ref connection = *components.get_connection();
-    let user = User::new(user_id, user_name, chat_id, true);
+    let user = User::new(user_id, user_name, chat_id, true, false);
     if let Err(error) = diesel::insert(&user)
         .into(server::schema::users::table)
         .execute(connection)
@@ -118,7 +149,7 @@ fn on_start(components: &Components, chat_id: i64, user_id: i32, user_name: Stri
 }
 
 fn on_stop(components: &Components, user_id: i32) {
-    debug!("on stop");
+    debug!("stop command");
 
     use server::schema::users::dsl::*;
 
@@ -148,12 +179,12 @@ fn on_sources_command(components: &Components, chat_id: i64) {
     }
 }
 
-fn on_shows_command(components: &Components, chat_id: i64, message_iter: &mut SplitWhitespace) {
+fn on_shows_command(components: &Components, chat_id: i64, text: &str) {
     debug!("sources command");
 
     use server::schema::shows::dsl::*;
 
-    let source = message_iter.next();
+    let source = text.split_whitespace().next();
     if let Some(source) = source {
         let ref connection = *components.get_connection();
         let query = shows.select(title)
@@ -177,11 +208,12 @@ fn on_shows_command(components: &Components, chat_id: i64, message_iter: &mut Sp
     }
 }
 
-fn on_subscribe(components: &Components, chat_id: i64, user_id: i32, message_iter: &mut SplitWhitespace) {
+fn on_subscribe(components: &Components, chat_id: i64, user_id: i32, text: &str) {
     debug!("subscribe command");
 
     use server::schema::shows::dsl::*;
 
+    let mut message_iter = text.split_whitespace();
     let source = message_iter.next();
     let show_title = message_iter.join(" ");
     match source {
@@ -242,9 +274,10 @@ fn on_subscriptions_command(components: &Components, chat_id: i64, user_id: i32)
     }
 }
 
-fn on_unsubscribe(components: &Components, chat_id: i64, user_id: i32, message_iter: &mut SplitWhitespace) {
+fn on_unsubscribe(components: &Components, chat_id: i64, user_id: i32, text: &str) {
     debug!("subscribe command");
 
+    let mut message_iter = text.split_whitespace();
     let source_name = message_iter.next();
     let show_title = message_iter.join(" ");
 
