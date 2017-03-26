@@ -107,13 +107,14 @@ fn on_start(components: &Components, chat_id: i64, user_id: i32, user_name: Stri
     components.api.send_message(chat_id, &format!("Hello, {}!", &user_name));
     let ref connection = *components.get_connection();
     let user = User::new(user_id, user_name, chat_id, true);
-    diesel::insert(&user)
+    if let Err(error) = diesel::insert(&user)
         .into(server::schema::users::table)
         .execute(connection)
         .or_else(|_| diesel::update(users.filter(id.eq(user_id)))
             .set(active.eq(true))
-            .execute(connection))
-        .expect("Failed on insert or update user");
+            .execute(connection)) {
+        error!("Failed on insert or update user {}: {}", user_id, error)
+    }
 }
 
 fn on_stop(components: &Components, user_id: i32) {
@@ -122,10 +123,11 @@ fn on_stop(components: &Components, user_id: i32) {
     use server::schema::users::dsl::*;
 
     let ref connection = *components.get_connection();
-    diesel::update(users.filter(id.eq(user_id)))
+    if let Err(error) = diesel::update(users.filter(id.eq(user_id)))
         .set(active.eq(false))
-        .execute(connection)
-        .expect("Failed on update user");
+        .execute(connection) {
+        error!("Failed on update user {}: {}", user_id, error)
+    }
 }
 
 fn on_sources_command(components: &Components, chat_id: i64) {
@@ -137,9 +139,12 @@ fn on_sources_command(components: &Components, chat_id: i64) {
     let query = shows.select(source_name)
         .distinct()
         .order(source_name.asc());
-    if let Ok(source_names) = query.load::<String>(connection) {
-        let all_sources = source_names.iter().join("\n");
-        components.api.send_message(chat_id, &all_sources);
+    match query.load::<String>(connection) {
+        Ok(source_names) => {
+            let all_sources = source_names.iter().join("\n");
+            components.api.send_message(chat_id, &all_sources);
+        },
+        Err(error) => error!("Failed on sources loading: {}", error),
     }
 }
 
@@ -165,7 +170,7 @@ fn on_shows_command(components: &Components, chat_id: i64, message_iter: &mut Sp
                     components.api.send_message(chat_id, &joined_titles);
                 }
             },
-            Err(error) => error!("{}", error),
+            Err(error) => error!("Failed on shows loading of {}: {}", source, error),
         }
     } else {
         components.api.send_message(chat_id, "Usage: /shows <source>");
