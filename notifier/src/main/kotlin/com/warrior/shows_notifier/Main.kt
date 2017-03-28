@@ -49,6 +49,8 @@ object Main {
 
     @JvmStatic
     fun main(args: Array<String>) {
+        logger.info("start")
+
         val config = findConfig(CONFIG_FILENAME)
         val (url, username, password) = config.databaseConfig
 
@@ -66,6 +68,7 @@ object Main {
         }
 
         notifier.shutdown(5, TimeUnit.MINUTES)
+        logger.info("stop")
     }
 
     private fun getSources(connection: Connection): List<String> {
