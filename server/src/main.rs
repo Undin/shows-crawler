@@ -259,12 +259,27 @@ fn on_subscriptions_command(components: &Components, chat_id: i64, user_id: i32)
     let ref connection = *components.get_connection();
     match query.load::<(String, String)>(connection) {
         Ok(subscriptions) => {
-            let max_lines = 100;
-            for i in 0 .. (subscriptions.len() + max_lines - 1) / max_lines {
-                let message = subscriptions[max_lines * i .. min(max_lines * (i + 1), subscriptions.len())]
-                    .iter()
-                    .map(|x| format!("({}, {})", x.0, x.1))
-                    .join("\n");
+            let max_shows_in_message = 100;
+            let mut prev_source = "";
+            let mut num_shows_in_message = 0;
+            let mut message = String::new();
+            for &(ref source, ref show) in subscriptions.iter() {
+                if source != prev_source {
+                    message += "*";
+                    message += source;
+                    message += ":*\n";
+                    prev_source = source
+                }
+                message += "  - ";
+                message += show;
+                message += "\n";
+                num_shows_in_message += 1;
+                if num_shows_in_message == max_shows_in_message {
+                    components.send_message(chat_id, &message);
+                    num_shows_in_message = 0;
+                }
+            }
+            if num_shows_in_message > 0 {
                 components.send_message(chat_id, &message);
             }
         },

@@ -22,7 +22,8 @@ impl TelegramApi {
     }
 
     pub fn send_message(&self, chat_id: i64, text: &str) -> Result<()> {
-        let mut params = HashMap::with_capacity(2);
+        let mut params = HashMap::with_capacity(3);
+        params.insert("parse_mode", "Markdown".to_owned());
         params.insert("chat_id", chat_id.to_string());
         params.insert("text", text.to_owned());
         let url = format!("{}/sendMessage", self.base_url);
