@@ -1,5 +1,5 @@
 buildscript {
-    ext.kotlinVersion = '1.1.0'
+    ext.kotlinVersion = '1.1.1'
     repositories {
         jcenter()
     }
@@ -16,9 +16,9 @@ allprojects {
 }
 
 def versions = [
-        jackson             : '2.8.6',
+        jackson             : '2.8.7',
         okhttp              : '3.6.0',
-        retrofit            : '2.1.0'
+        retrofit            : '2.2.0'
 ]
 
 ext.libraries = [
