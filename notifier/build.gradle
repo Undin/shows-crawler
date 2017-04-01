@@ -32,4 +32,7 @@ dependencies {
     compile libraries.okhttpLogging
 
     compile libraries.log4j2
+
+    testCompile libraries.assertj
+    testCompile libraries.mockwebserver
 }

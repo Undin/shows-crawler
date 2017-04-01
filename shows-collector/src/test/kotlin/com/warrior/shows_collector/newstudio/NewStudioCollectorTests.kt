@@ -3,9 +3,8 @@ package com.warrior.shows_collector.newstudio
 import com.warrior.shows_collector.Show
 import com.warrior.shows_collector.newstudio.TestUtils.mockHtmlResponse
 import okhttp3.mockwebserver.*
-import org.hamcrest.CoreMatchers.equalTo
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
-import org.junit.Assert.assertThat
 import org.junit.Before
 import org.junit.Test
 
@@ -14,7 +13,7 @@ import org.junit.Test
  */
 class NewStudioCollectorTests {
 
-    private val SOURCE_NAME = "newstudio";
+    private val SOURCE_NAME = "newstudio"
 
     private val ROOT = "/"
     private val FRINGE = "/viewforum.php?f=133"
@@ -56,10 +55,10 @@ class NewStudioCollectorTests {
         val baseUrl = server.url(ROOT).toString()
         val collector = NewStudioCollector(SOURCE_NAME, baseUrl)
         val shows = collector.collect()
-        assertThat(shows, equalTo(listOf(
+        assertThat(shows).containsExactlyElementsOf(listOf(
                 Show(SOURCE_NAME, 465, "Game of Thrones", "Игра Престолов", server.url(GAME_OF_THRONES).toString()),
                 Show(SOURCE_NAME, 254, "Revolution", "Революция", server.url(REVOLUTION).toString()))
-        ))
+        )
     }
 
     @Test
@@ -67,6 +66,6 @@ class NewStudioCollectorTests {
         val baseUrl = server.url("/wrong_path").toString()
         val collector = NewStudioCollector(SOURCE_NAME, baseUrl)
         val shows = collector.collect()
-        assertThat(shows, equalTo(emptyList()))
+        assertThat(shows).isEmpty()
     }
 }

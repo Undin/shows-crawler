@@ -3,10 +3,8 @@ package com.warrior.shows_collector.newstudio
 import com.warrior.shows_collector.newstudio.ShowDetailsExtractor.ShowDetails
 import com.warrior.shows_collector.newstudio.TestUtils.mockHtmlResponse
 import okhttp3.mockwebserver.*
-import org.hamcrest.CoreMatchers.equalTo
-import org.hamcrest.CoreMatchers.nullValue
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
-import org.junit.Assert.assertThat
 import org.junit.Before
 import org.junit.Test
 
@@ -51,34 +49,36 @@ class ShowDetailsExtractorTests {
     fun firstItem() {
         val url = server.url(GAME_OF_THRONES).toString()
         val showDetails = ShowDetailsExtractor.getShowDetails(url)
-        assertThat(showDetails, equalTo(ShowDetails("Game of Thrones", "Игра Престолов")))
+        assertThat(showDetails)
+                .isEqualTo(ShowDetails("Game of Thrones", "Игра Престолов"))
     }
 
     @Test
     fun notFirstItem() {
         val url = server.url(REVOLUTION).toString()
         val showDetails = ShowDetailsExtractor.getShowDetails(url)
-        assertThat(showDetails, equalTo(ShowDetails("Revolution", "Революция")))
+        assertThat(showDetails)
+                .isEqualTo(ShowDetails("Revolution", "Революция"))
     }
 
     @Test
     fun showWithoutSeparateSeries() {
         val url = server.url(FRINGE).toString()
         val showDetails = ShowDetailsExtractor.getShowDetails(url)
-        assertThat(showDetails, nullValue())
+        assertThat(showDetails).isNull()
     }
 
     @Test
     fun noElements() {
         val url = server.url(LONGMIRE).toString()
         val showDetails = ShowDetailsExtractor.getShowDetails(url)
-        assertThat(showDetails, nullValue())
+        assertThat(showDetails).isNull()
     }
 
     @Test
     fun requestError() {
         val url = server.url(EMERALD_CITY).toString()
         val showDetails = ShowDetailsExtractor.getShowDetails(url)
-        assertThat(showDetails, nullValue())
+        assertThat(showDetails).isNull()
     }
 }

@@ -32,6 +32,6 @@ dependencies {
 
     compile libraries.log4j2
 
-    testCompile libraries.junit
+    testCompile libraries.assertj
     testCompile libraries.mockwebserver
 }

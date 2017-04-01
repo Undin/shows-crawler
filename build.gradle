@@ -43,6 +43,6 @@ ext.libraries = [
         postgres            : 'org.postgresql:postgresql:9.4.1212',
 
         // test dependencies
-        junit               : 'junit:junit:4.12',
+        assertj             : 'org.assertj:assertj-core:3.6.2',
         mockwebserver       : 'com.squareup.okhttp3:mockwebserver:' + versions.okhttp
 ]
