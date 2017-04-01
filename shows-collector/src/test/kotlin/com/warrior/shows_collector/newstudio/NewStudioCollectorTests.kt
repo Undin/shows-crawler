@@ -23,7 +23,7 @@ class NewStudioCollectorTests {
     private val REVOLUTION = "/viewforum.php?f=254"
     private val OTHER = "/viewforum.php?f=17"
 
-    private var server = MockWebServer()
+    private val server = MockWebServer()
 
     init {
         server.setDispatcher(object : Dispatcher() {
@@ -57,8 +57,8 @@ class NewStudioCollectorTests {
         val collector = NewStudioCollector(SOURCE_NAME, baseUrl)
         val shows = collector.collect()
         assertThat(shows, equalTo(listOf(
-                Show(SOURCE_NAME, 465, "Game of Thrones", "Игра Престолов", 6, 10),
-                Show(SOURCE_NAME, 254, "Revolution", "Революция", 1, 15))
+                Show(SOURCE_NAME, 465, "Game of Thrones", "Игра Престолов", server.url(GAME_OF_THRONES).toString()),
+                Show(SOURCE_NAME, 254, "Revolution", "Революция", server.url(REVOLUTION).toString()))
         ))
     }
 
@@ -69,5 +69,4 @@ class NewStudioCollectorTests {
         val shows = collector.collect()
         assertThat(shows, equalTo(emptyList()))
     }
-
 }

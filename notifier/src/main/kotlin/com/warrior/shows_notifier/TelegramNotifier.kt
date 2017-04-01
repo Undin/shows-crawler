@@ -1,6 +1,6 @@
 package com.warrior.shows_notifier
 
-import com.warrior.shows_notifier.entities.Episode
+import com.warrior.shows_notifier.entities.ShowEpisode
 import okhttp3.*
 import okhttp3.logging.HttpLoggingInterceptor
 import org.apache.logging.log4j.LogManager
@@ -8,11 +8,6 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 class TelegramNotifier(telegramToken: String) : Callback {
-
-    private val SOURCES_URLS = mapOf(
-            "lostfilm" to "http://www.lostfilm.tv/",
-            "newstudio" to "http://newstudio.tv/"
-    )
 
     private val logger = LogManager.getLogger(javaClass)
     private val url: HttpUrl = HttpUrl.parse("https://api.telegram.org/bot$telegramToken/sendMessage")
@@ -26,14 +21,13 @@ class TelegramNotifier(telegramToken: String) : Callback {
                 .build()
     }
 
-    fun notify(chatId: Long, title: String, source: String, episodes: List<Episode>) {
-        val (season, episodeNumber) = episodes[0]
-        val sourceUrl = SOURCES_URLS[source] ?: ""
+    fun notify(chatId: Long, showUrl: String, episodes: List<ShowEpisode>) {
+        val (season, episodeNumber, title, episodeUrl) = episodes[0]
         val text = if (episodes.size == 1) {
-            "$title ${formatEpisodeString(season, episodeNumber)}\n$sourceUrl"
+            "$title ${formatEpisodeString(season, episodeNumber)}\n$episodeUrl"
         } else {
             val (lastSeason, lastEpisodeNumber) = episodes.last()
-            "$title ${formatEpisodeString(season, episodeNumber)} - ${formatEpisodeString(lastSeason, lastEpisodeNumber)}\n$sourceUrl"
+            "$title ${formatEpisodeString(season, episodeNumber)} - ${formatEpisodeString(lastSeason, lastEpisodeNumber)}\n$showUrl"
         }
 
         val body = FormBody.Builder()
@@ -62,5 +56,5 @@ class TelegramNotifier(telegramToken: String) : Callback {
     }
 
     private fun formatEpisodeString(season: Int, episodeNumber: Int): String
-            = "S${"%02d".format(season)}E${"%02d".format(episodeNumber)}"
+            = "S%02dE%02d".format(season, episodeNumber)
 }

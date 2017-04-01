@@ -8,6 +8,7 @@ import com.warrior.shows_notifier.crawlers.Crawler
 import com.warrior.shows_notifier.crawlers.LostFilmCrawler
 import com.warrior.shows_notifier.crawlers.NewStudioCrawler
 import com.warrior.shows_notifier.entities.Episode
+import com.warrior.shows_notifier.entities.ShowEpisode
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Supplier
 import java.io.File
@@ -17,7 +18,6 @@ import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.ResultSet
 import java.util.concurrent.TimeUnit
-import kotlin.collections.ArrayList
 
 /**
  * Created by warrior on 10/29/16.
@@ -28,7 +28,7 @@ object Main {
 
     private const val SHOW_QUERY = """
             SELECT
-              id, last_season, last_episode
+              id, last_season, last_episode, show_url
             FROM shows
             WHERE shows.source_name = '%s' AND shows.title = ?;"""
     private const val SUBSCRIPTION_QUERY = """
@@ -40,8 +40,7 @@ object Main {
     private const val UPDATE_STATEMENT = """
             UPDATE shows
             SET last_season = ?, last_episode = ?
-            WHERE shows.id = ?;
-            """
+            WHERE shows.id = ?;"""
 
     private val logger = LogManager.getLogger(javaClass)
 
@@ -90,7 +89,7 @@ object Main {
 
     private fun crawlNewSeriesAndNotify(connection: Connection, source: String, crawler: Crawler) {
         val episodes = crawler.episodes()
-        val episodesMap = episodes.groupBy({ it.showTitle }) { (_, season, episodeNumber) -> Episode(season, episodeNumber) }
+        val episodesMap = episodes.groupBy(ShowEpisode::showTitle)
         val showStatement = connection.prepareStatement(SHOW_QUERY.format(source))
         val subscriptionStatement = connection.prepareStatement(SUBSCRIPTION_QUERY)
         val updateStatement = connection.prepareStatement(UPDATE_STATEMENT)
@@ -100,12 +99,13 @@ object Main {
                 val (showId, lastSavedEpisode) = showStatement.executeQuery().use { cursor ->
                     if (cursor.next()) {
                         val showId = cursor.getLong("id")
+                        val showUrl = cursor.getString("show_url")
                         val lastSeason = cursor.getInt("last_season", -1)
                         val lastEpisode = cursor.getInt("last_episode", -1)
-                        showId to Episode(lastSeason, lastEpisode)
+                        showId to Episode(lastSeason, lastEpisode, showUrl)
                     } else null
                 } ?: continue
-                val newEpisodes = episodes.filter { it > lastSavedEpisode }.sorted()
+                val newEpisodes = episodes.filter { lastSavedEpisode < it }.sorted()
                 if (newEpisodes.isEmpty()) {
                     continue
                 }
@@ -117,7 +117,7 @@ object Main {
                     }
                     chatIds
                 }
-                notify(chatIds, title, source, newEpisodes)
+                notify(chatIds, lastSavedEpisode.showUrl, newEpisodes)
                 val (season, episodeNumber) = newEpisodes.last()
                 updateStatement.setInt(1, season)
                 updateStatement.setInt(2, episodeNumber)
@@ -130,9 +130,9 @@ object Main {
         }
     }
 
-    private fun notify(chatIds: List<Long>, title: String, source: String, newEpisodes: List<Episode>) {
+    private fun notify(chatIds: List<Long>, showUrl: String, newEpisodes: List<ShowEpisode>) {
         for (chatId in chatIds) {
-            notifier.notify(chatId, title, source, newEpisodes)
+            notifier.notify(chatId, showUrl, newEpisodes)
         }
     }
 

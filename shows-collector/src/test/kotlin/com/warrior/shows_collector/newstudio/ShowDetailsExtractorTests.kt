@@ -21,7 +21,7 @@ class ShowDetailsExtractorTests {
     private val REVOLUTION = "/viewforum.php?f=254"
     private val EMERALD_CITY = "/viewforum.php?f=531"
 
-    private var server = MockWebServer()
+    private val server = MockWebServer()
 
     init {
         server.setDispatcher(object : Dispatcher() {
@@ -51,14 +51,14 @@ class ShowDetailsExtractorTests {
     fun firstItem() {
         val url = server.url(GAME_OF_THRONES).toString()
         val showDetails = ShowDetailsExtractor.getShowDetails(url)
-        assertThat(showDetails, equalTo(ShowDetails("Game of Thrones", "Игра Престолов", 6, 10)))
+        assertThat(showDetails, equalTo(ShowDetails("Game of Thrones", "Игра Престолов")))
     }
 
     @Test
     fun notFirstItem() {
         val url = server.url(REVOLUTION).toString()
         val showDetails = ShowDetailsExtractor.getShowDetails(url)
-        assertThat(showDetails, equalTo(ShowDetails("Revolution", "Революция", 1, 15)))
+        assertThat(showDetails, equalTo(ShowDetails("Revolution", "Революция")))
     }
 
     @Test
