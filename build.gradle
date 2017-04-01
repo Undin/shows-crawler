@@ -15,6 +15,25 @@ allprojects {
     }
 }
 
+subprojects {
+    afterEvaluate {
+        if (it.hasProperty('test')) {
+            test {
+                testLogging {
+                    events "passed", "skipped", "failed"
+                    exceptionFormat = 'full'
+                }
+                afterSuite { desc, result ->
+                    if (!desc.parent) {
+                        def output = "Results: ${result.resultType} (${result.testCount} tests, ${result.successfulTestCount} successes, ${result.failedTestCount} failures, ${result.skippedTestCount} skipped)"
+                        println("\n$output\n")
+                    }
+                }
+            }
+        }
+    }
+}
+
 def versions = [
         jackson             : '2.8.7',
         okhttp              : '3.6.0',
@@ -32,7 +51,6 @@ ext.libraries = [
         jacksonKotlin       : 'com.fasterxml.jackson.module:jackson-module-kotlin:' + versions.jackson,
         woodstox            : 'org.codehaus.woodstox:woodstox-core-asl:4.4.1',
 
-        commonsCli          : 'commons-cli:commons-cli:1.3.1',
         log4j2              : 'org.apache.logging.log4j:log4j-core:2.7',
 
         okhttp              : 'com.squareup.okhttp3:okhttp:' + versions.okhttp,
