@@ -71,6 +71,6 @@ class LostFilmCollector(private val sourceName: String) : ShowCollector {
     }
 
     companion object {
-        const val BASE_URL = "http://www.lostfilm.tv"
+        const val BASE_URL = "https://www.lostfilm.tv"
     }
 }
