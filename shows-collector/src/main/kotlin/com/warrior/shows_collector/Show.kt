@@ -8,10 +8,13 @@ data class Show(
         val rawId: Int,
         val title: String,
         val localTitle: String,
-        val season: Int? = null,
-        val episodeNumber: Int? = null
+        val showUrl: String
 ) {
     override fun toString(): String {
-        return "{ source_name: $sourceName, raw_id: $rawId, title: $title, local_title: $localTitle, season: $season, episode: $episodeNumber }"
+        return "{ source_name: $sourceName, " +
+                "raw_id: $rawId, " +
+                "title: $title, " +
+                "local_title: $localTitle, " +
+                "url: $showUrl }"
     }
 }

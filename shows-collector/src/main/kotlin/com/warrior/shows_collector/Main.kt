@@ -12,10 +12,6 @@ import java.io.FileNotFoundException
 import java.sql.*
 import java.util.*
 
-/**
- * Created by warrior on 2/19/17.
- */
-
 object Main {
 
     private const val CONFIG_NAME = "collector-config.yaml"
@@ -37,9 +33,10 @@ object Main {
         for (collector in collectors) {
             val shows = collector.collect()
             val statement = connection.prepareStatement("""
-            INSERT INTO shows (source_name, raw_id, title, local_title, last_season, last_episode)
-            VALUES (?, ?, ?, ?, ?, ?)
-            ON CONFLICT DO NOTHING;""")
+            INSERT INTO shows (source_name, raw_id, title, local_title, show_url)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT ON CONSTRAINT shows_source_name_raw_id_unique DO UPDATE
+              SET show_url = EXCLUDED.show_url;""")
             statement.use {
                 try {
                     for (show in shows) {
@@ -47,8 +44,7 @@ object Main {
                         statement.setInt(2, show.rawId)
                         statement.setString(3, show.title)
                         statement.setString(4, show.localTitle)
-                        statement.setInt(5, show.season)
-                        statement.setInt(6, show.episodeNumber)
+                        statement.setString(5, show.showUrl)
                         statement.addBatch()
                     }
                     statement.executeBatch()
@@ -56,14 +52,6 @@ object Main {
                     LOGGER.error(e)
                 }
             }
-        }
-    }
-
-    private fun PreparedStatement.setInt(parameterIndex: Int, value: Int?) {
-        if (value != null) {
-            setInt(parameterIndex, value)
-        } else {
-            setNull(parameterIndex, Types.INTEGER)
         }
     }
 

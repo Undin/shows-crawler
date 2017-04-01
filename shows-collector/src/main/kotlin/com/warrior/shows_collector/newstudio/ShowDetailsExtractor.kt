@@ -24,10 +24,8 @@ internal object ShowDetailsExtractor {
                     val matcher = PATTERN.matcher(element.text())
                     if (matcher.find()) {
                         val localTitle = matcher.group(1)
-                        val season = matcher.group(2).toInt()
-                        val episodeNumber = matcher.group(3).toInt()
                         val title = matcher.group(4)
-                        ShowDetails(title, localTitle, season, episodeNumber)
+                        ShowDetails(title, localTitle)
                     } else null
                 } else null
             } catch (e: IOException) {
@@ -37,5 +35,5 @@ internal object ShowDetailsExtractor {
         return null
     }
 
-    data class ShowDetails(val title: String, val localTitle: String, val season: Int, val episodeNumber: Int)
+    data class ShowDetails(val title: String, val localTitle: String)
 }

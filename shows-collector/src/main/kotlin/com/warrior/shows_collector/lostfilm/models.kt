@@ -11,9 +11,11 @@ import com.warrior.shows_collector.Show
 internal data class LostFilmShow(
         @JsonProperty("id") val rawId: String,
         @JsonProperty("title_orig") val title: String,
-        @JsonProperty("title") val localTitle: String
+        @JsonProperty("title") val localTitle: String,
+        @JsonProperty("link") val showUrl: String
 ) {
-    fun toShow(sourceName: String): Show = Show(sourceName, rawId.toInt(), title, localTitle)
+    fun toShow(sourceName: String, baseUrl: String): Show
+            = Show(sourceName, rawId.toInt(), title, localTitle, baseUrl + showUrl)
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)

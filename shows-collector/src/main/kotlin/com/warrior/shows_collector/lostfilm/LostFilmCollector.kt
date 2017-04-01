@@ -27,7 +27,7 @@ class LostFilmCollector(private val sourceName: String) : ShowCollector {
                 .addInterceptor(logging)
                 .build()
         api = Retrofit.Builder()
-                .baseUrl("http://www.lostfilm.tv/")
+                .baseUrl(BASE_URL)
                 .client(client)
                 .addConverterFactory(JacksonConverterFactory.create(jacksonObjectMapper()))
                 .build()
@@ -47,7 +47,7 @@ class LostFilmCollector(private val sourceName: String) : ShowCollector {
                     if (lostfilmShows.isEmpty()) {
                         break
                     } else {
-                        shows += lostfilmShows.map { it.toShow(sourceName) }
+                        shows += lostfilmShows.map { it.toShow(sourceName, BASE_URL) }
                         offset += 10
                         continue
                     }
@@ -68,5 +68,9 @@ class LostFilmCollector(private val sourceName: String) : ShowCollector {
         }
 
         return shows
+    }
+
+    companion object {
+        const val BASE_URL = "http://www.lostfilm.tv"
     }
 }

@@ -33,15 +33,16 @@ class NewStudioCollector(
                 if (rawId in EXCLUDED_ELEMENTS) {
                     continue
                 }
-                val showDetails = ShowDetailsExtractor.getShowDetails(URI(baseUrl).resolve(href).toString())
+                val showUrl = URI(baseUrl).resolve(href).toString()
+                val showDetails = ShowDetailsExtractor.getShowDetails(showUrl)
                 if (showDetails != null) {
-                    val (title, localTitle, season, episodeNumber) = showDetails
-                    val show = Show(sourceName, rawId, title, localTitle, season, episodeNumber)
+                    val (title, localTitle) = showDetails
+                    val show = Show(sourceName, rawId, title, localTitle, showUrl)
                     println(show)
                     shows += show
                 } else {
                     val elementName = e.text()
-                    logger.info("Can't extract show details from $elementName  ($href)")
+                    logger.info("Can't extract show details from $elementName ($href)")
                 }
             }
         } catch (e: IOException) {
