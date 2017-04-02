@@ -1,15 +1,38 @@
-language: java
+language: rust
+dist: trusty
+rust:
+  - stable
+  - beta
+  - nightly
+matrix:
+  allow_failures:
+    - rust: nightly
+
+addons:
+  postgresql: "9.5"
 
 jdk:
   - oraclejdk8
 
+env:
+  - DATABASE_URL=postgresql://localhost:5432/test
+
+install:
+  - cargo install diesel_cli --no-default-features --features postgres
+
+before_script:
+  - (cd server && diesel database setup)
+
+script:
+  - ./gradlew check
+  - cargo build --manifest-path server/Cargo.toml --color=always --verbose
+
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+
 cache:
   directories:
+    - $HOME/.cargo
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
-
-script:
-  - gradle check
