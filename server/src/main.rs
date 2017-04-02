@@ -83,6 +83,7 @@ fn process_update(components: Components, update: Update) {
                 };
 
                 match command {
+                    "/help" => on_help(&components, chat_id),
                     "/service_message" => on_service_message_command(&components, user_id, text),
                     "/start" => on_start(&components, chat_id, user_id, first_name),
                     "/stop" => on_stop(&components, user_id),
@@ -99,6 +100,26 @@ fn process_update(components: Components, update: Update) {
             _ => debug!("skip message"),
         }
     }
+}
+
+fn print_help(components: &Components, chat_id: i64) {
+    let help_text =
+        "Hi, I'm notifier bot. I can notify you about new episodes of your favorite TV shows.\n\
+        \n\
+        Available commands:\n\
+        /sources - List supported sources\n\
+        /shows <source> - List TV shows for particular source. For example, `/shows lostfilm`\n\
+        /subscribe <source> <show title> - Create subscription to notifications about TV show. For example, `/subscribe lostfilm Daredevil`\n\
+        /unsubscribe <source> <show title> - Remove subscription. For example, `/unsubscribe lostfilm Daredevil`\n\
+        /subscriptions - List your current subscriptions";
+    components.send_message(chat_id, help_text);
+}
+
+
+fn on_help(components: &Components, chat_id: i64) {
+    debug!("help command");
+
+    print_help(components, chat_id);
 }
 
 fn on_service_message_command(components: &Components, user_id: i32, text: &str) {
@@ -135,7 +156,7 @@ fn on_start(components: &Components, chat_id: i64, user_id: i32, user_name: Stri
     use server::models::User;
     use server::schema::users::dsl::{active, id, users};
 
-    components.send_message(chat_id, &format!("Hello, {}!", &user_name));
+    print_help(components, chat_id);
     let ref connection = *components.get_connection();
     let user = User::new(user_id, user_name, chat_id, true, false);
     if let Err(error) = diesel::insert(&user)
@@ -180,7 +201,7 @@ fn on_sources_command(components: &Components, chat_id: i64) {
 }
 
 fn on_shows_command(components: &Components, chat_id: i64, text: &str) {
-    debug!("sources command");
+    debug!("shows command");
 
     use server::schema::shows::dsl::*;
 
@@ -241,7 +262,7 @@ fn on_subscribe(components: &Components, chat_id: i64, user_id: i32, text: &str)
             }
         },
         _ => {
-            components.send_message(chat_id, "Usage: /subscribe <source> <show_title>");
+            components.send_message(chat_id, "Usage: /subscribe <source> <show title>");
         }
     }
 }
@@ -290,7 +311,7 @@ fn on_subscriptions_command(components: &Components, chat_id: i64, user_id: i32)
 }
 
 fn on_unsubscribe(components: &Components, chat_id: i64, user_id: i32, text: &str) {
-    debug!("subscribe command");
+    debug!("unsubscribe command");
 
     let mut message_iter = text.split_whitespace();
     let source_name = message_iter.next();
@@ -322,7 +343,7 @@ fn on_unsubscribe(components: &Components, chat_id: i64, user_id: i32, text: &st
             }
         },
         _ => {
-            components.send_message(chat_id, "Usage: /unsubscribe <source> <show_title>");
+            components.send_message(chat_id, "Usage: /unsubscribe <source> <show title>");
         }
     }
 }
