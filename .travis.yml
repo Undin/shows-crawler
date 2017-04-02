@@ -18,7 +18,7 @@ env:
   - DATABASE_URL=postgresql://localhost:5432/test
 
 install:
-  - cargo install diesel_cli --no-default-features --features postgres
+  - command -v diesel > /dev/null || cargo install diesel_cli --no-default-features --features postgres
 
 before_script:
   - (cd server && diesel database setup)
