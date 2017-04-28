@@ -10,6 +10,7 @@ extern crate serde_yaml;
 extern crate server;
 extern crate threadpool;
 
+use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use itertools::Itertools;
 use server::Components;
@@ -126,28 +127,20 @@ fn on_service_message_command(components: &Components, user_id: i32, text: &str)
     debug!("service message command");
 
     use server::schema::users::dsl::*;
-    let query = users.select(superuser)
-        .filter(id.eq(user_id));
 
     let ref connection = *components.get_connection();
-    match query.first(connection) {
-        Ok(true) => {
-            info!("service message from user {}: \"{}\"", user_id, text);
-            let chat_ids_query = users.select(chat_id);
-            match chat_ids_query.load(connection) {
-                Ok(chat_ids) => {
-                    for cid in chat_ids  {
-                        components.send_message(cid, &text);
-                    }
-                },
-                Err(error) => error!("Failed on loading users: {}", error),
-            }
-        },
-        Ok(false) => {
-            info!("User {} isn't superuser. Do nothing", user_id)
-        },
-        Err(error) => error!("Failed on loading user {}: {}", user_id, error),
-    }
+    do_with_permission(connection, user_id, || {
+        info!("service message from user {}: \"{}\"", user_id, text);
+        let chat_ids_query = users.select(chat_id);
+        match chat_ids_query.load(connection) {
+            Ok(chat_ids) => {
+                for cid in chat_ids  {
+                    components.send_message(cid, &text);
+                }
+            },
+            Err(error) => error!("Failed on loading users: {}", error),
+        }
+    });
 }
 
 fn on_start(components: &Components, chat_id: i64, user_id: i32, user_name: String) {
@@ -345,5 +338,21 @@ fn on_unsubscribe(components: &Components, chat_id: i64, user_id: i32, text: &st
         _ => {
             components.send_message(chat_id, "Usage: /unsubscribe <source> <show title>");
         }
+    }
+}
+
+fn do_with_permission<F>(connection: &PgConnection, user_id: i32, action: F) -> ()
+    where F: Fn() -> () {
+
+    use server::schema::users::dsl::*;
+    let query = users.select(superuser)
+        .filter(id.eq(user_id));
+
+    match query.first(connection) {
+        Ok(true) => action(),
+        Ok(false) => {
+            info!("User {} isn't superuser. Do nothing", user_id)
+        },
+        Err(error) => error!("Failed on loading user {}: {}", user_id, error),
     }
 }
