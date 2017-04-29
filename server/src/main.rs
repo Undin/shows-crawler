@@ -87,6 +87,7 @@ fn process_update(components: Components, update: Update) {
                     "/help" => on_help(&components, chat_id),
                     "/service_message" => on_service_message_command(&components, user_id, text),
                     "/start" => on_start(&components, chat_id, user_id, first_name),
+                    "/statistics" => on_statistics(&components, chat_id, user_id),
                     "/stop" => on_stop(&components, user_id),
                     "/sources" => on_sources_command(&components, chat_id),
                     "/shows" => on_shows_command(&components, chat_id, text),
@@ -160,6 +161,57 @@ fn on_start(components: &Components, chat_id: i64, user_id: i32, user_name: Stri
             .execute(connection)) {
         error!("Failed on insert or update user {}: {}", user_id, error)
     }
+}
+
+fn on_statistics(components: &Components, chat_id: i64, user_id: i32) {
+    debug!("statistics command");
+
+    use server::schema::users::dsl::users;
+    use server::schema::subscriptions::dsl::subscriptions;
+    use diesel::expression::dsl::sql;
+
+    let ref connection = *components.get_connection();
+    do_with_permission(connection, user_id, || {
+        let users_count = match users.count().get_result::<i64>(connection) {
+            Ok(value) => value,
+            Err(e) => {
+                error!("Failed to load users count: {}", e);
+                return;
+            }
+        };
+        let subscriptions_count = match subscriptions.count().get_result::<i64>(connection) {
+            Ok(value) => value,
+            Err(e) => {
+                error!("Failed to load subscriptions count: {}", e);
+                return;
+            }
+        };
+
+        // TODO: use orm operations instead of raw sql
+        let query =
+            "SELECT
+                shows.source_name,
+                COUNT(*)
+            FROM shows
+            GROUP BY shows.source_name;";
+        let shows_statistic: Vec<(String, i64)> = match connection.query_all(sql(query)) {
+            Ok(value) => value,
+            Err(e) => {
+                error!("Failed to load shows statistic: {}", e);
+                return;
+            }
+        };
+
+        let mut message = format!("\
+            users: {}\n\
+            subscriptions: {}\n\
+            shows:\n", users_count, subscriptions_count);
+        for (show, count) in shows_statistic {
+            message += &format!("  - {}: {}\n", show, count);
+        }
+
+        components.send_message(chat_id, &message);
+    })
 }
 
 fn on_stop(components: &Components, user_id: i32) {
