@@ -47,7 +47,7 @@ fn main() {
     loop {
         match components.api.get_updates(config.update_timeout, config.update_batch_size, update_id) {
             Ok(update_response) => {
-                let updates: Vec<Update> = update_response.result;
+                let updates = update_response.result;
                 for update in updates {
                     update_id = update.update_id + 1;
                     let components = components.clone();

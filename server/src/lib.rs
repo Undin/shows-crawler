@@ -31,7 +31,7 @@ pub struct Components {
 
 impl Components {
     pub fn new<S1: Into<String>, S2: Into<String>>(bot_token: S1, database_url: S2) -> Self {
-        let client: Client = reqwest::Client::new().unwrap();
+        let client = Client::new().unwrap();
         let api = Arc::new(TelegramApi::new(client, bot_token));
 
         let config = Config::default();
