@@ -4,6 +4,7 @@ extern crate derive_new;
 extern crate diesel;
 #[macro_use]
 extern crate diesel_codegen;
+extern crate itertools;
 #[macro_use]
 extern crate log;
 extern crate r2d2;
@@ -12,6 +13,7 @@ extern crate reqwest;
 #[macro_use]
 extern crate serde_derive;
 
+pub mod commands;
 pub mod models;
 pub mod schema;
 pub mod telegram_api;

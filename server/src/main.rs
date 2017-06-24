@@ -7,12 +7,14 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_yaml;
+#[macro_use]
 extern crate server;
 extern crate threadpool;
 
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use itertools::Itertools;
+use server::commands::{Command, PermissionLevel};
 use server::Components;
 use server::models::Subscription;
 use server::schema::*;
@@ -34,6 +36,16 @@ struct Config {
     #[serde(default = "default_update_batch_size")]
     pub update_batch_size: u32
 }
+
+const COMMANDS: &'static [Command] = &[
+    command!("service_message", &["message"], "Send service message to all users. For example, `/service_message Hello everyone!`", PermissionLevel::Superuser),
+    command!("sources", &[], "List supported sources", PermissionLevel::User),
+    command!("shows", &["source"], "List TV shows for particular source. For example, `/shows lostfilm`", PermissionLevel::User),
+    command!("statistics", &[], "Show bot statistics", PermissionLevel::Superuser),
+    command!("subscribe", &["source", "show title"], "Create subscription to notifications about TV show. For example, `/subscribe lostfilm Daredevil`", PermissionLevel::User),
+    command!("unsubscribe", &["source", "show title"], "Remove subscription. For example, `/unsubscribe lostfilm Daredevil`", PermissionLevel::User),
+    command!("subscriptions", &[], "List your current subscriptions", PermissionLevel::User)
+];
 
 fn main() {
     log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
@@ -84,7 +96,7 @@ fn process_update(components: Components, update: Update) {
                 };
 
                 match command {
-                    "/help" => on_help(&components, chat_id),
+                    "/help" => on_help(&components, chat_id, user_id),
                     "/service_message" => on_service_message_command(&components, user_id, text),
                     "/start" => on_start(&components, chat_id, user_id, first_name),
                     "/statistics" => on_statistics(&components, chat_id, user_id),
@@ -104,24 +116,32 @@ fn process_update(components: Components, update: Update) {
     }
 }
 
-fn print_help(components: &Components, chat_id: i64) {
-    let help_text =
+fn print_help(components: &Components, chat_id: i64, is_superuser: bool) {
+    let mut help_text =
         "Hi, I'm notifier bot. I can notify you about new episodes of your favorite TV shows.\n\
         \n\
-        Available commands:\n\
-        /sources - List supported sources\n\
-        /shows <source> - List TV shows for particular source. For example, `/shows lostfilm`\n\
-        /subscribe <source> <show title> - Create subscription to notifications about TV show. For example, `/subscribe lostfilm Daredevil`\n\
-        /unsubscribe <source> <show title> - Remove subscription. For example, `/unsubscribe lostfilm Daredevil`\n\
-        /subscriptions - List your current subscriptions";
-    components.send_message(chat_id, help_text);
+        Available commands:\n".to_string();
+    for command in COMMANDS.iter() {
+        if is_superuser || command.permission_level == PermissionLevel::User {
+            help_text += &command.to_string();
+            help_text += "\n"
+        }
+    }
+    components.send_message(chat_id, &help_text);
 }
 
-
-fn on_help(components: &Components, chat_id: i64) {
+fn on_help(components: &Components, chat_id: i64, user_id: i32) {
     debug!("help command");
 
-    print_help(components, chat_id);
+    use server::schema::users::dsl::{id, superuser, users};
+
+    let query = users.select(superuser)
+        .filter(id.eq(user_id));
+    let ref connection = *components.get_connection();
+    match query.first(connection) {
+        Ok(true) => print_help(components, chat_id, true),
+        _ => print_help(components, chat_id, false)
+    }
 }
 
 fn on_service_message_command(components: &Components, user_id: i32, text: &str) {
@@ -150,7 +170,7 @@ fn on_start(components: &Components, chat_id: i64, user_id: i32, user_name: Stri
     use server::models::User;
     use server::schema::users::dsl::{active, id, users};
 
-    print_help(components, chat_id);
+    print_help(components, chat_id, false);
     let ref connection = *components.get_connection();
     let user = User::new(user_id, user_name, chat_id, true, false);
     if let Err(error) = diesel::insert(&user)
