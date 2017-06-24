@@ -23,7 +23,7 @@ use r2d2::{Config, Pool, PooledConnection};
 use r2d2_diesel::ConnectionManager;
 use reqwest::Client;
 use std::sync::Arc;
-use telegram_api::TelegramApi;
+use telegram_api::{SendResponse, TelegramApi};
 
 #[derive(Clone)]
 pub struct Components {
@@ -51,8 +51,16 @@ impl Components {
 
     pub fn send_message(&self, chat_id: i64, text: &str) {
         debug!("Send message. chat_id: {}, message: {}", chat_id, text);
-        if let Err(error) = self.api.send_message(chat_id, text) {
-            error!("Can't send message: {}", error);
+        match self.api.send_message(chat_id, text) {
+            Ok(SendResponse { ok: true, .. }) => {},
+            Ok(SendResponse { ok: false, error_code: Some(code), description: desc }) => {
+                match desc {
+                    Some(desc) => error!("Error code: {}, description: {}", code, desc),
+                    None => error!("Error code: {}", code)
+                }
+            }
+            Ok(SendResponse { ok: false, .. }) => error!("Unknown error"),
+            Err(error) => error!("Can't send message: {}", error)
         }
     }
 }

@@ -1,4 +1,4 @@
-use reqwest::{Client, Result, Response};
+use reqwest::{Client, Result};
 use std::collections::HashMap;
 
 pub struct TelegramApi {
@@ -14,24 +14,29 @@ impl TelegramApi {
 
     pub fn get_updates(&self, timeout: u32, limit: u32, offset: i32) -> Result<UpdateResponse> {
         let url = format!("{}/getUpdates?timeout={}&limit={}&offset={}", self.base_url, timeout, limit, offset);
-        let result = self.client.get(&url).send();
-        match result {
-            Ok(mut response) => response.json(),
-            Err(error) => Err(error)
-        }
+        self.client.get(&url)
+            .send()
+            .and_then(|mut response| response.json())
     }
 
-    pub fn send_message(&self, chat_id: i64, text: &str) -> Result<()> {
+    pub fn send_message(&self, chat_id: i64, text: &str) -> Result<SendResponse> {
         let mut params = HashMap::with_capacity(3);
         params.insert("parse_mode", "Markdown".to_owned());
         params.insert("chat_id", chat_id.to_string());
         params.insert("text", text.to_owned());
         let url = format!("{}/sendMessage", self.base_url);
-        let response = self.client.post(&url)
+        self.client.post(&url)
             .form(&params)
-            .send();
-        response.map(|_| ())
+            .send()
+            .and_then(|mut response| response.json())
     }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct SendResponse {
+    pub ok: bool,
+    pub error_code: Option<u16>,
+    pub description: Option<String>
 }
 
 #[derive(Serialize, Deserialize, Debug)]
