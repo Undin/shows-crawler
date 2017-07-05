@@ -5,13 +5,13 @@ authors = ["Undin <a.pendryak@yandex.ru>"]
 
 [dependencies]
 derive-new = "0.4"
-diesel = { version = "0.13", features = ["postgres"] }
-diesel_codegen = { version = "0.13", features = ["postgres"] }
+diesel = { version = "0.14", features = ["postgres"] }
+diesel_codegen = { version = "0.14", features = ["postgres"] }
 itertools = "0.6"
 log = "0.3"
 log4rs = "0.7"
 r2d2 = "0.7"
-r2d2-diesel = "0.13"
+r2d2-diesel = "0.14"
 reqwest = "0.6"
 serde = "1.0"
 serde_derive = "1.0"

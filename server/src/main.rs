@@ -1,3 +1,4 @@
+#[macro_use]
 extern crate diesel;
 extern crate itertools;
 #[macro_use]
@@ -11,8 +12,8 @@ extern crate serde_yaml;
 extern crate server;
 extern crate threadpool;
 
+use diesel::*;
 use diesel::pg::PgConnection;
-use diesel::prelude::*;
 use itertools::Itertools;
 use server::commands::{Command, PermissionLevel};
 use server::Components;
@@ -173,10 +174,10 @@ fn on_start(components: &Components, chat_id: i64, user_id: i32, user_name: Stri
     print_help(components, chat_id, false);
     let ref connection = *components.get_connection();
     let user = User::new(user_id, user_name, chat_id, true, false);
-    if let Err(error) = diesel::insert(&user)
+    if let Err(error) = insert(&user)
         .into(server::schema::users::table)
         .execute(connection)
-        .or_else(|_| diesel::update(users.filter(id.eq(user_id)))
+        .or_else(|_| update(users.filter(id.eq(user_id)))
             .set(active.eq(true))
             .execute(connection)) {
         error!("Failed on insert or update user {}: {}", user_id, error)
@@ -214,7 +215,7 @@ fn on_statistics(components: &Components, chat_id: i64, user_id: i32) {
                 COUNT(*)
             FROM shows
             GROUP BY shows.source_name;";
-        let shows_statistic: Vec<(String, i64)> = match connection.query_all(sql(query)) {
+        let shows_statistic: Vec<(String, i64)> = match connection.query_by_index(sql(query)) {
             Ok(value) => value,
             Err(e) => {
                 error!("Failed to load shows statistic: {}", e);
@@ -240,7 +241,7 @@ fn on_stop(components: &Components, user_id: i32) {
     use server::schema::users::dsl::*;
 
     let ref connection = *components.get_connection();
-    if let Err(error) = diesel::update(users.filter(id.eq(user_id)))
+    if let Err(error) = update(users.filter(id.eq(user_id)))
         .set(active.eq(false))
         .execute(connection) {
         error!("Failed on update user {}: {}", user_id, error)
@@ -310,7 +311,7 @@ fn on_subscribe(components: &Components, chat_id: i64, user_id: i32, text: &str)
             match query.first::<i64>(connection) {
                 Ok(show_id) => {
                     let subscription = Subscription::new(show_id, user_id);
-                    let insertion_result = diesel::insert(&subscription)
+                    let insertion_result = insert(&subscription)
                         .into(subscriptions::table)
                         .execute(connection);
                     match insertion_result {
@@ -385,19 +386,16 @@ fn on_unsubscribe(components: &Components, chat_id: i64, user_id: i32, text: &st
     match source_name {
         Some(source_name) if !show_title.is_empty() => {
             let ref connection = *components.get_connection();
-            // TODO: use ORM api instead of raw SQL after diesel implements it
-            let command = format!(
-                "DELETE FROM subscriptions
-                 WHERE (user_id, show_id) IN
-                      (SELECT
-                         user_id,
-                         show_id
-                       FROM users
-                         INNER JOIN subscriptions ON users.id = subscriptions.user_id
-                         INNER JOIN shows ON subscriptions.show_id = shows.id
-                       WHERE users.id = {} AND shows.source_name = '{}' AND shows.title = '{}');",
-                user_id, source_name, show_title);
-            match connection.execute(&command) {
+
+            use diesel::expression::grouped::Grouped;
+
+            let query = delete(subscriptions::table.filter(Grouped((subscriptions::user_id, subscriptions::show_id)).eq_any(
+                users::table.inner_join(subscriptions::table.inner_join(shows::table))
+                    .select((subscriptions::user_id, subscriptions::show_id))
+                    .filter(users::id.eq(user_id).and(shows::source_name.eq(source_name).and(shows::title.eq(&show_title))))
+            )));
+
+            match query.execute(connection) {
                 Ok(1) => {
                     components.send_message(chat_id, &format!("subscription ({}, {}) removed", source_name, show_title));
                 },

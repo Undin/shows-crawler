@@ -1,7 +1,6 @@
 use schema::{users, shows, subscriptions};
 
 #[derive(new, Identifiable, Queryable, Insertable, Associations, Debug)]
-#[has_many(subscriptions)]
 #[table_name="users"]
 pub struct User {
     pub id: i32,
@@ -12,7 +11,6 @@ pub struct User {
 }
 
 #[derive(new, Identifiable, Queryable, Insertable, Associations, Debug)]
-#[has_many(subscriptions)]
 #[table_name="shows"]
 pub struct Show {
     pub id: i64,
@@ -25,9 +23,12 @@ pub struct Show {
 }
 
 #[derive(new, Queryable, Insertable, Associations, Debug)]
-#[belongs_to(Show, User)]
+#[belongs_to(User)]
+#[belongs_to(Show)]
 #[table_name="subscriptions"]
 pub struct Subscription {
     pub show_id: i64,
     pub user_id: i32,
 }
+
+enable_multi_table_joins!(users, shows);
