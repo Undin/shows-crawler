@@ -26,8 +26,10 @@ impl TelegramApi {
     pub fn send_message(&self, chat_id: i64, text: &str, buttons_info: Option<&[(String, i64)]>) -> Result<ApiResponse> {
         let data = match buttons_info {
             Some(info) => {
-                let buttons = info.iter()
-                    .map(|&(ref label, data)| vec![InlineKeyboardButton::new(label, data.to_string())])
+                let buttons = info.chunks(2)
+                    .map(|chunk| chunk.iter()
+                        .map(|&(ref label, data)| InlineKeyboardButton::new(label, data.to_string()))
+                        .collect::<Vec<_>>())
                     .collect::<Vec<_>>();
                 SendMessageData::new(chat_id, text, &self.parse_mode, Some(InlineKeyboardMarkup::new(buttons)))
             },
