@@ -1,15 +1,19 @@
 use reqwest::{Client, Result};
-use std::collections::HashMap;
 
 pub struct TelegramApi {
     client: Client,
-    base_url: String
+    base_url: String,
+    parse_mode: String
 }
 
 impl TelegramApi {
 
     pub fn new<S: Into<String>>(client: Client, token: S) -> TelegramApi {
-        TelegramApi { client: client, base_url: format!("https://api.telegram.org/bot{}", token.into()) }
+        TelegramApi {
+            client: client,
+            base_url: format!("https://api.telegram.org/bot{}", token.into()),
+            parse_mode: "Markdown".to_string()
+        }
     }
 
     pub fn get_updates(&self, timeout: u32, limit: u32, offset: i32) -> Result<UpdateResponse> {
@@ -19,21 +23,45 @@ impl TelegramApi {
             .and_then(|mut response| response.json())
     }
 
-    pub fn send_message(&self, chat_id: i64, text: &str) -> Result<SendResponse> {
-        let mut params = HashMap::with_capacity(3);
-        params.insert("parse_mode", "Markdown".to_owned());
-        params.insert("chat_id", chat_id.to_string());
-        params.insert("text", text.to_owned());
-        let url = format!("{}/sendMessage", self.base_url);
-        self.client.post(&url)
-            .form(&params)
+    pub fn send_message(&self, chat_id: i64, text: &str, buttons_info: Option<&[(String, i64)]>) -> Result<ApiResponse> {
+        let data = match buttons_info {
+            Some(info) => {
+                let buttons = info.iter()
+                    .map(|&(ref label, data)| vec![InlineKeyboardButton::new(label, data.to_string())])
+                    .collect::<Vec<_>>();
+                SendMessageData::new(chat_id, text, &self.parse_mode, Some(InlineKeyboardMarkup::new(buttons)))
+            },
+            None => SendMessageData::new(chat_id, text, &self.parse_mode, None)
+        };
+        self.client.post(&format!("{}/sendMessage", self.base_url))
+            .json(&data)
             .send()
             .and_then(|mut response| response.json())
     }
 }
 
+#[derive(new, Serialize, Debug)]
+pub struct SendMessageData<'a> {
+    pub chat_id: i64,
+    pub text: &'a str,
+    pub parse_mode: &'a str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reply_markup: Option<InlineKeyboardMarkup<'a>>
+}
+
+#[derive(new, Serialize, Debug)]
+pub struct InlineKeyboardButton<'a> {
+    pub text: &'a str,
+    pub callback_data: String
+}
+
+#[derive(new, Serialize, Debug)]
+pub struct InlineKeyboardMarkup<'a> {
+    pub inline_keyboard: Vec<Vec<InlineKeyboardButton<'a>>>
+}
+
 #[derive(Serialize, Deserialize, Debug)]
-pub struct SendResponse {
+pub struct ApiResponse {
     pub ok: bool,
     pub error_code: Option<u16>,
     pub description: Option<String>
@@ -74,9 +102,17 @@ pub struct Message {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct CallbackQuery {
+    pub id: String,
+    pub from: User,
+    pub data: Option<String>
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Update {
     pub update_id: i32,
-    pub message: Option<Message>
+    pub message: Option<Message>,
+    pub callback_query: Option<CallbackQuery>
 }
 
 #[derive(Serialize, Deserialize, Debug)]

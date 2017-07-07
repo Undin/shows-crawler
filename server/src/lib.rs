@@ -23,7 +23,7 @@ use r2d2::{Config, Pool, PooledConnection};
 use r2d2_diesel::ConnectionManager;
 use reqwest::Client;
 use std::sync::Arc;
-use telegram_api::{SendResponse, TelegramApi};
+use telegram_api::{ApiResponse, TelegramApi};
 
 #[derive(Clone)]
 pub struct Components {
@@ -50,16 +50,24 @@ impl Components {
     }
 
     pub fn send_message(&self, chat_id: i64, text: &str) {
-        debug!("Send message. chat_id: {}, message: {}", chat_id, text);
-        match self.api.send_message(chat_id, text) {
-            Ok(SendResponse { ok: true, .. }) => {},
-            Ok(SendResponse { ok: false, error_code: Some(code), description: desc }) => {
+        self.send_message_internal(chat_id, text, None);
+    }
+
+    pub fn send_message_with_buttons(&self, chat_id: i64, text: &str, buttons_info: &[(String, i64)]) {
+        self.send_message_internal(chat_id, text, Some(buttons_info));
+    }
+
+    fn send_message_internal(&self, chat_id: i64, text: &str, buttons_info: Option<&[(String, i64)]>) {
+        debug!("send message. chat_id: {}, message: {}, buttons_info: {:?}", chat_id, text, buttons_info);
+        match self.api.send_message(chat_id, text, buttons_info) {
+            Ok(ApiResponse { ok: true, .. }) => {},
+            Ok(ApiResponse { ok: false, error_code: Some(code), description: desc }) => {
                 match desc {
                     Some(desc) => error!("Error code: {}, description: {}", code, desc),
                     None => error!("Error code: {}", code)
                 }
             }
-            Ok(SendResponse { ok: false, .. }) => error!("Unknown error"),
+            Ok(ApiResponse { ok: false, .. }) => error!("Unknown error"),
             Err(error) => error!("Can't send message: {}", error)
         }
     }

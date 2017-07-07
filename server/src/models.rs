@@ -7,7 +7,8 @@ pub struct User {
     pub first_name: String,
     pub chat_id: i64,
     pub active: bool,
-    pub superuser: bool
+    pub superuser: bool,
+    pub has_active_session: bool
 }
 
 #[derive(new, Identifiable, Queryable, Insertable, Associations, Debug)]

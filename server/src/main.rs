@@ -1,4 +1,3 @@
-#[macro_use]
 extern crate diesel;
 extern crate itertools;
 #[macro_use]
@@ -18,8 +17,14 @@ use itertools::Itertools;
 use server::commands::{Command, PermissionLevel};
 use server::Components;
 use server::models::Subscription;
-use server::schema::*;
-use server::telegram_api::{Chat, ChatType, Message, Update, User};
+use server::schema::shows::table as show_table;
+use server::schema::subscriptions::table as sub_table;
+use server::schema::users::table as user_table;
+use server::schema::shows::dsl::{id as sid, shows, source_name, title};
+use server::schema::users::dsl::{active, chat_id as cid, has_active_session, id as uid, superuser, users};
+use server::schema::subscriptions::dsl::{show_id as sub_sid, subscriptions, user_id as sub_uid};
+use server::telegram_api::{CallbackQuery, Chat, ChatType, Message, Update, User};
+use std::ascii::AsciiExt;
 use std::cmp::min;
 use std::convert::Into;
 use std::fs::File;
@@ -83,37 +88,86 @@ fn default_update_timeout() -> u32 { 20 }
 fn default_update_batch_size() -> u32 { 100 }
 
 fn process_update(components: Components, update: Update) {
-    for message in update.message {
-        match message {
-            Message {
-                chat: Chat { id: chat_id, chat_type: ChatType::Private },
-                from: Some(User { id: user_id, first_name }),
-                text: Some(user_text), ..
-            } => {
-                info!("user {}: {}", user_id, user_text);
-                let (command, text) = match user_text.find(' ') {
-                    Some(index) => user_text.split_at(index),
-                    None => (user_text.as_str(), "")
-                };
+    match update {
+        Update {
+            message: Some(
+                Message {
+                    chat: Chat { id: chat_id, chat_type: ChatType::Private },
+                    from: Some(user),
+                    text: Some(text),
+                    ..
+                }),
+            ..
+        } => process_user_command(&components, chat_id, &user, &text),
+        Update {
+            message: None,
+            callback_query: Some(
+                CallbackQuery {
+                    from: user,
+                    data: Some(data),
+                    ..
+                }),
+            ..
+        } => process_button_click(&components, &user, &data),
+        _ => debug!("skip message")
+    }
+}
 
-                match command {
-                    "/help" => on_help(&components, chat_id, user_id),
-                    "/service_message" => on_service_message_command(&components, user_id, text),
-                    "/start" => on_start(&components, chat_id, user_id, first_name),
-                    "/statistics" => on_statistics(&components, chat_id, user_id),
-                    "/stop" => on_stop(&components, user_id),
-                    "/sources" => on_sources_command(&components, chat_id),
-                    "/shows" => on_shows_command(&components, chat_id, text),
-                    "/subscribe" => on_subscribe(&components, chat_id, user_id, text),
-                    "/subscriptions" => on_subscriptions_command(&components, chat_id, user_id),
-                    "/unsubscribe" => on_unsubscribe(&components, chat_id, user_id, text),
-                    _ => {
-                        warn!("unknown command '{}'", command);
-                    }
-                }
-            }
-            _ => debug!("skip message"),
+fn process_user_command(components: &Components, chat_id: i64, user: &User, user_text: &str) {
+    info!("user {}: {}", user.id, user_text);
+
+    let ref connection = *components.get_connection();
+    set_has_active_session(connection, user.id, false);
+
+    let (command, text) = match user_text.find(' ') {
+        Some(index) => user_text.split_at(index),
+        None => (user_text, "")
+    };
+
+    match command {
+        "/help" => on_help(&components, chat_id, user.id),
+        "/service_message" => on_service_message_command(&components, user.id, text),
+        "/start" => on_start(&components, chat_id, user.id, &user.first_name),
+        "/statistics" => on_statistics(&components, chat_id, user.id),
+        "/stop" => on_stop(&components, user.id),
+        "/sources" => on_sources_command(&components, chat_id),
+        "/shows" => on_shows_command(&components, chat_id, text),
+        "/subscribe" => on_subscribe(&components, chat_id, user.id, text),
+        "/subscriptions" => on_subscriptions_command(&components, chat_id, user.id),
+        "/unsubscribe" => on_unsubscribe(&components, chat_id, user.id, text),
+        _ => {
+            warn!("unknown command '{}'", command);
         }
+    }
+}
+
+fn process_button_click(components: &Components, user: &User, data: &str) {
+    info!("user {} clicked at {}", user.id, data);
+
+    match data.parse::<i64>() {
+        Ok(show_id) => {
+            let ref connection = *components.get_connection();
+            match users.select((cid, has_active_session))
+                .filter(uid.eq(user.id))
+                .first(connection) {
+                Ok((chat_id, true)) => create_subscription_at_click(components, connection, chat_id, user.id, show_id),
+                Ok((_, false)) => info!("user {} doesn't have active session. skip", user.id),
+                Err(error) => error!("Failed to load user's 'has_active_session' field {}: {}", user.id, error),
+            }
+        },
+        Err(error) => error!("Failed on data parsing. '{}' must be string representation of i64: {}", data, error),
+    }
+}
+
+fn create_subscription_at_click(components: &Components, connection: &PgConnection, chat_id: i64, user_id: i32, show_id: i64) {
+    match shows.select(title)
+        .filter(sid.eq(show_id))
+        .first::<String>(connection) {
+        Ok(show_title) => {
+            create_subscription(components, connection, chat_id, user_id, show_id, &show_title);
+            set_has_active_session(connection, user_id, false);
+        },
+        Err(error) => error!("Failed to load show {} title: {}", show_id, error)
     }
 }
 
@@ -148,16 +202,14 @@ fn on_help(components: &Components, chat_id: i64, user_id: i32) {
 fn on_service_message_command(components: &Components, user_id: i32, text: &str) {
     debug!("service message command");
 
-    use server::schema::users::dsl::*;
-
     let ref connection = *components.get_connection();
     do_with_permission(connection, user_id, || {
         info!("service message from user {}: \"{}\"", user_id, text);
-        let chat_ids_query = users.select(chat_id);
+        let chat_ids_query = users.select(cid);
         match chat_ids_query.load(connection) {
             Ok(chat_ids) => {
-                for cid in chat_ids  {
-                    components.send_message(cid, &text);
+                for chat_id in chat_ids  {
+                    components.send_message(chat_id, &text);
                 }
             },
             Err(error) => error!("Failed on loading users: {}", error),
@@ -165,19 +217,18 @@ fn on_service_message_command(components: &Components, user_id: i32, text: &str)
     });
 }
 
-fn on_start(components: &Components, chat_id: i64, user_id: i32, user_name: String) {
+fn on_start(components: &Components, chat_id: i64, user_id: i32, user_name: &str) {
     debug!("start command");
 
     use server::models::User;
-    use server::schema::users::dsl::{active, id, users};
 
     print_help(components, chat_id, false);
     let ref connection = *components.get_connection();
-    let user = User::new(user_id, user_name, chat_id, true, false);
+    let user = User::new(user_id, user_name.to_string(), chat_id, true, false, false);
     if let Err(error) = insert(&user)
-        .into(server::schema::users::table)
+        .into(user_table)
         .execute(connection)
-        .or_else(|_| update(users.filter(id.eq(user_id)))
+        .or_else(|_| update(users.filter(uid.eq(user_id)))
             .set(active.eq(true))
             .execute(connection)) {
         error!("Failed on insert or update user {}: {}", user_id, error)
@@ -187,8 +238,6 @@ fn on_start(components: &Components, chat_id: i64, user_id: i32, user_name: Stri
 fn on_statistics(components: &Components, chat_id: i64, user_id: i32) {
     debug!("statistics command");
 
-    use server::schema::users::dsl::users;
-    use server::schema::subscriptions::dsl::subscriptions;
     use diesel::expression::dsl::sql;
 
     let ref connection = *components.get_connection();
@@ -238,10 +287,8 @@ fn on_statistics(components: &Components, chat_id: i64, user_id: i32) {
 fn on_stop(components: &Components, user_id: i32) {
     debug!("stop command");
 
-    use server::schema::users::dsl::*;
-
     let ref connection = *components.get_connection();
-    if let Err(error) = update(users.filter(id.eq(user_id)))
+    if let Err(error) = update(users.filter(uid.eq(user_id)))
         .set(active.eq(false))
         .execute(connection) {
         error!("Failed on update user {}: {}", user_id, error)
@@ -250,8 +297,6 @@ fn on_stop(components: &Components, user_id: i32) {
 
 fn on_sources_command(components: &Components, chat_id: i64) {
     debug!("sources command");
-
-    use server::schema::shows::dsl::*;
 
     let ref connection = *components.get_connection();
     let query = shows.select(source_name)
@@ -268,8 +313,6 @@ fn on_sources_command(components: &Components, chat_id: i64) {
 
 fn on_shows_command(components: &Components, chat_id: i64, text: &str) {
     debug!("shows command");
-
-    use server::schema::shows::dsl::*;
 
     let source = text.split_whitespace().next();
     if let Some(source) = source {
@@ -298,33 +341,28 @@ fn on_shows_command(components: &Components, chat_id: i64, text: &str) {
 fn on_subscribe(components: &Components, chat_id: i64, user_id: i32, text: &str) {
     debug!("subscribe command");
 
-    use server::schema::shows::dsl::*;
-
     let mut message_iter = text.split_whitespace();
     let source = message_iter.next();
-    let show_title = message_iter.join(" ");
+    let input_title: String = message_iter.join(" ");
     match source {
-        Some(source) if !show_title.is_empty() => {
+        Some(source) if !input_title.is_empty() => {
+            let title_regex = format!("%{}%", input_title);
+            let query = shows.select((title, sid))
+                .filter(source_name.eq(source))
+                .filter(title.ilike(title_regex));
             let ref connection = *components.get_connection();
-            let query = shows.select(id)
-                .filter(source_name.eq(source).and(title.eq(&show_title)));
-            match query.first::<i64>(connection) {
-                Ok(show_id) => {
-                    let subscription = Subscription::new(show_id, user_id);
-                    let insertion_result = insert(&subscription)
-                        .into(subscriptions::table)
-                        .execute(connection);
-                    match insertion_result {
-                        Ok(_) => {
-                            components.send_message(chat_id, &format!("subscription ({}, {}) created!", source, show_title));
-                        },
-                        Err(error) => error!("{}", error)
-                    }
+            match query.load::<(String, i64)>(connection) {
+                Ok(suitable_shows) => match suitable_shows.len() {
+                    0 => components.send_message(chat_id, &format!("({}, {}) isn't found", source, input_title)),
+                    1 if suitable_shows[0].0.eq_ignore_ascii_case(&input_title) =>
+                        create_subscription(components, connection,
+                                            chat_id, user_id, suitable_shows[0].1, &suitable_shows[0].0),
+                    1...6 => if set_has_active_session(connection, user_id, true) {
+                        components.send_message_with_buttons(chat_id, "Maybe you meant:", &suitable_shows[..]);
+                    },
+                    _ => components.send_message(chat_id, "There are too many suitable results. Try to clarify title name.")
                 },
-                Err(error) => {
-                    components.send_message(chat_id, &format!("({}, {}) isn't found", source, show_title));
-                    info!("{}", error);
-                }
+                Err(error) => error!("Failed to update load shows: {}", error)
             }
         },
         _ => {
@@ -336,21 +374,19 @@ fn on_subscribe(components: &Components, chat_id: i64, user_id: i32, text: &str)
 fn on_subscriptions_command(components: &Components, chat_id: i64, user_id: i32) {
     debug!("subscriptions command");
 
-    use server::schema::shows::dsl::{source_name, title};
-
-    let query = subscriptions::table.inner_join(shows::table)
+    let query = sub_table.inner_join(show_table)
         .select((source_name, title))
-        .filter(subscriptions::user_id.eq(user_id))
+        .filter(sub_uid.eq(user_id))
         .order((source_name, title).asc());
 
     let ref connection = *components.get_connection();
     match query.load::<(String, String)>(connection) {
-        Ok(subscriptions) => {
+        Ok(subs) => {
             let max_shows_in_message = 100;
             let mut prev_source = "";
             let mut num_shows_in_message = 0;
             let mut message = String::new();
-            for &(ref source, ref show) in subscriptions.iter() {
+            for &(ref source, ref show) in subs.iter() {
                 if source != prev_source {
                     message += "*";
                     message += source;
@@ -380,28 +416,26 @@ fn on_unsubscribe(components: &Components, chat_id: i64, user_id: i32, text: &st
     debug!("unsubscribe command");
 
     let mut message_iter = text.split_whitespace();
-    let source_name = message_iter.next();
+    let source = message_iter.next();
     let show_title = message_iter.join(" ");
 
-    match source_name {
-        Some(source_name) if !show_title.is_empty() => {
+    match source {
+        Some(source) if !show_title.is_empty() => {
             let ref connection = *components.get_connection();
 
             use diesel::expression::grouped::Grouped;
 
-            let query = delete(subscriptions::table.filter(Grouped((subscriptions::user_id, subscriptions::show_id)).eq_any(
-                users::table.inner_join(subscriptions::table.inner_join(shows::table))
-                    .select((subscriptions::user_id, subscriptions::show_id))
-                    .filter(users::id.eq(user_id).and(shows::source_name.eq(source_name).and(shows::title.eq(&show_title))))
+            let query = delete(sub_table.filter(Grouped((sub_uid, sub_sid)).eq_any(
+                user_table.inner_join(sub_table.inner_join(show_table))
+                    .select((sub_uid, sub_sid))
+                    .filter(uid.eq(user_id))
+                    .filter(source_name.eq(source))
+                    .filter(title.eq(&show_title))
             )));
 
             match query.execute(connection) {
-                Ok(1) => {
-                    components.send_message(chat_id, &format!("subscription ({}, {}) removed", source_name, show_title));
-                },
-                Ok(0) => {
-                    components.send_message(chat_id, &format!("subscription ({}, {}) not found", source_name, show_title));
-                },
+                Ok(1) => components.send_message(chat_id, &format!("Subscription ({}, {}) removed", source, show_title)),
+                Ok(0) => components.send_message(chat_id, &format!("Subscription ({}, {}) not found", source, show_title)),
                 res @ _ => error!("{:?}", res),
             }
         },
@@ -411,17 +445,37 @@ fn on_unsubscribe(components: &Components, chat_id: i64, user_id: i32, text: &st
     }
 }
 
+fn create_subscription(components: &Components, connection: &PgConnection,
+                       chat_id: i64, user_id: i32, show_id: i64, show_title: &str) {
+    let subscription = Subscription::new(show_id, user_id);
+    if let Err(error) = insert(&subscription).into(sub_table).execute(connection) {
+        error!("Failed to create new subscription ({}, {}): {}", show_id, user_id, error);
+    } else {
+        components.send_message(chat_id, &format!("Subscription to {} created!", show_title));
+    }
+}
+
+fn set_has_active_session(connection: &PgConnection, user_id: i32, value: bool) -> bool {
+    if let Err(error) = update(users.filter(uid.eq(user_id)))
+        .set(has_active_session.eq(value))
+        .execute(connection) {
+        error!("Failed to update 'has_active_session' for user {}: {}", user_id, error);
+        false
+    } else {
+        true
+    }
+}
+
 fn do_with_permission<F>(connection: &PgConnection, user_id: i32, action: F) -> ()
     where F: Fn() -> () {
 
-    use server::schema::users::dsl::*;
     let query = users.select(superuser)
-        .filter(id.eq(user_id));
+        .filter(uid.eq(user_id));
 
     match query.first(connection) {
         Ok(true) => action(),
         Ok(false) => {
-            info!("User {} isn't superuser. Do nothing", user_id)
+            info!("user {} isn't superuser. Do nothing", user_id)
         },
         Err(error) => error!("Failed on loading user {}: {}", user_id, error),
     }

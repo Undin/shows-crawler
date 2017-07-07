@@ -1,6 +1,6 @@
 [root]
 name = "server"
-version = "0.2.4"
+version = "0.3.0"
 dependencies = [
  "derive-new 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "diesel 0.14.0 (registry+https://github.com/rust-lang/crates.io-index)",
