@@ -135,9 +135,7 @@ fn process_user_command(components: &Components, chat_id: i64, user: &User, user
         "/subscribe" => on_subscribe(&components, chat_id, user.id, text),
         "/subscriptions" => on_subscriptions_command(&components, chat_id, user.id),
         "/unsubscribe" => on_unsubscribe(&components, chat_id, user.id, text),
-        _ => {
-            warn!("unknown command '{}'", command);
-        }
+        _ => warn!("unknown command '{}'", command)
     }
 }
 
@@ -365,9 +363,7 @@ fn on_subscribe(components: &Components, chat_id: i64, user_id: i32, text: &str)
                 Err(error) => error!("Failed to update load shows: {}", error)
             }
         },
-        _ => {
-            components.send_message(chat_id, "Usage: /subscribe <source> <show title>");
-        }
+        _ => components.send_message(chat_id, "Usage: /subscribe <source> <show title>")
     }
 }
 
@@ -406,9 +402,7 @@ fn on_subscriptions_command(components: &Components, chat_id: i64, user_id: i32)
                 components.send_message(chat_id, &message);
             }
         },
-        Err(error) => {
-            error!("{}", error);
-        }
+        Err(error) => error!("{}", error)
     }
 }
 
@@ -421,17 +415,15 @@ fn on_unsubscribe(components: &Components, chat_id: i64, user_id: i32, text: &st
 
     match source {
         Some(source) if !show_title.is_empty() => {
+            let shows_with_title_and_source = shows
+                .select(sid)
+                .filter(title.eq(&show_title))
+                .filter(source_name.ilike(source));
+            let target = subscriptions
+                .filter(sub_uid.eq(user_id))
+                .filter(sub_sid.eq_any(shows_with_title_and_source));
+            let query = diesel::delete(target);
             let ref connection = *components.get_connection();
-
-            use diesel::expression::grouped::Grouped;
-
-            let query = delete(sub_table.filter(Grouped((sub_uid, sub_sid)).eq_any(
-                user_table.inner_join(sub_table.inner_join(show_table))
-                    .select((sub_uid, sub_sid))
-                    .filter(uid.eq(user_id))
-                    .filter(source_name.eq(source))
-                    .filter(title.eq(&show_title))
-            )));
 
             match query.execute(connection) {
                 Ok(1) => components.send_message(chat_id, &format!("Subscription ({}, {}) removed", source, show_title)),
@@ -439,9 +431,7 @@ fn on_unsubscribe(components: &Components, chat_id: i64, user_id: i32, text: &st
                 res @ _ => error!("{:?}", res),
             }
         },
-        _ => {
-            components.send_message(chat_id, "Usage: /unsubscribe <source> <show title>");
-        }
+        _ => components.send_message(chat_id, "Usage: /unsubscribe <source> <show title>")
     }
 }
 
@@ -474,9 +464,7 @@ fn do_with_permission<F>(connection: &PgConnection, user_id: i32, action: F) -> 
 
     match query.first(connection) {
         Ok(true) => action(),
-        Ok(false) => {
-            info!("user {} isn't superuser. Do nothing", user_id)
-        },
+        Ok(false) => info!("user {} isn't superuser. Do nothing", user_id),
         Err(error) => error!("Failed on loading user {}: {}", user_id, error),
     }
 }
