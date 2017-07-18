@@ -18,9 +18,7 @@ impl TelegramApi {
 
     pub fn get_updates(&self, timeout: u32, limit: u32, offset: i32) -> Result<UpdateResponse> {
         let url = format!("{}/getUpdates?timeout={}&limit={}&offset={}", self.base_url, timeout, limit, offset);
-        self.client.get(&url)
-            .send()
-            .and_then(|mut response| response.json())
+        self.client.get(&url)?.send()?.json()
     }
 
     pub fn send_message(&self, chat_id: i64, text: &str, buttons_info: Option<&[(String, i64)]>) -> Result<ApiResponse> {
@@ -35,10 +33,7 @@ impl TelegramApi {
             },
             None => SendMessageData::new(chat_id, text, &self.parse_mode, None)
         };
-        self.client.post(&format!("{}/sendMessage", self.base_url))
-            .json(&data)
-            .send()
-            .and_then(|mut response| response.json())
+        self.client.post(&format!("{}/sendMessage", self.base_url))?.json(&data)?.send()?.json()
     }
 }
 
