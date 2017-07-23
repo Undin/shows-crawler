@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit
 class TelegramNotifier(telegramToken: String) : Callback {
 
     private val logger = LogManager.getLogger(javaClass)
-    private val url: HttpUrl = HttpUrl.parse("https://api.telegram.org/bot$telegramToken/sendMessage")
+    private val url: HttpUrl = HttpUrl.parse("https://api.telegram.org/bot$telegramToken/sendMessage")!!
     private val client: OkHttpClient
 
     init {

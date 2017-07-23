@@ -24,7 +24,6 @@ dependencies {
     compile libraries.jacksonXml
     compile libraries.jacksonYaml
     compile libraries.jacksonKotlin
-    compile libraries.woodstox
 
     compile libraries.postgres
 

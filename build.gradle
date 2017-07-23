@@ -4,7 +4,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.4'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.1'
         classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:' + kotlinVersion
     }
 }
@@ -35,32 +35,31 @@ subprojects {
 }
 
 def versions = [
-        jackson             : '2.8.7',
-        okhttp              : '3.6.0',
-        retrofit            : '2.2.0'
+        jackson             : '2.8.9',
+        okhttp              : '3.8.1',
+        retrofit            : '2.3.0'
 ]
 
 ext.libraries = [
         kotlin              : 'org.jetbrains.kotlin:kotlin-stdlib-jre8:' + kotlinVersion,
         kotlinReflect       : 'org.jetbrains.kotlin:kotlin-reflect:' + kotlinVersion,
 
-        jsoup               : 'org.jsoup:jsoup:1.10.2',
+        jsoup               : 'org.jsoup:jsoup:1.10.3',
         jackson             : 'com.fasterxml.jackson.core:jackson-databind:' + versions.jackson,
         jacksonXml          : 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:' + versions.jackson,
         jacksonYaml         : 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:' + versions.jackson,
         jacksonKotlin       : 'com.fasterxml.jackson.module:jackson-module-kotlin:' + versions.jackson,
-        woodstox            : 'org.codehaus.woodstox:woodstox-core-asl:4.4.1',
 
-        log4j2              : 'org.apache.logging.log4j:log4j-core:2.7',
+        log4j2              : 'org.apache.logging.log4j:log4j-core:2.8.2',
 
         okhttp              : 'com.squareup.okhttp3:okhttp:' + versions.okhttp,
         okhttpLogging       : 'com.squareup.okhttp3:logging-interceptor:' + versions.okhttp,
         retrofit            : 'com.squareup.retrofit2:retrofit:' + versions.retrofit,
         retrofitJackson     : 'com.squareup.retrofit2:converter-jackson:' + versions.retrofit,
 
-        postgres            : 'org.postgresql:postgresql:9.4.1212',
+        postgres            : 'org.postgresql:postgresql:42.1.3',
 
         // test dependencies
-        assertj             : 'org.assertj:assertj-core:3.6.2',
+        assertj             : 'org.assertj:assertj-core:3.8.0',
         mockwebserver       : 'com.squareup.okhttp3:mockwebserver:' + versions.okhttp
 ]

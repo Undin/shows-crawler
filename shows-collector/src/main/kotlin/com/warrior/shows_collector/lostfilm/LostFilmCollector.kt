@@ -43,7 +43,8 @@ class LostFilmCollector(private val sourceName: String) : ShowCollector {
             try {
                 val response = api.shows(offset).execute()
                 if (response.isSuccessful) {
-                    val lostfilmShows = response.body().data
+                    // `response.body()` is not null because `response.isSuccessful` is true
+                    val lostfilmShows = response.body()!!.data
                     if (lostfilmShows.isEmpty()) {
                         break
                     } else {

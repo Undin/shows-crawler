@@ -52,6 +52,6 @@ class NewStudioCrawler(
     }
 
     companion object {
-        const val DEFAULT_BASE_URL = "http://newstudio.tv/"
+        private const val DEFAULT_BASE_URL = "http://newstudio.tv/"
     }
 }
