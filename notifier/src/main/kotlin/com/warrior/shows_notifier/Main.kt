@@ -4,9 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import com.warrior.shows_notifier.crawlers.Crawler
-import com.warrior.shows_notifier.crawlers.LostFilmCrawler
-import com.warrior.shows_notifier.crawlers.NewStudioCrawler
+import com.warrior.shows_notifier.crawlers.*
 import com.warrior.shows_notifier.entities.Episode
 import com.warrior.shows_notifier.entities.ShowEpisode
 import org.apache.logging.log4j.LogManager
@@ -57,12 +55,17 @@ object Main {
 
         DriverManager.getConnection(url, username, password).use { connection ->
             val sources = getSources(connection)
-            for (source in sources) {
-                when (source) {
-                    "lostfilm" -> crawlNewSeriesAndNotify(connection, source, LostFilmCrawler())
-                    "newstudio" -> crawlNewSeriesAndNotify(connection, source, NewStudioCrawler())
-                    else -> logger.warn("Crawler for $source is not implemented yet. Do nothing")
+            loop@ for (source in sources) {
+                val crawler = when (source) {
+                    "alexfilm" -> AlexFilmCrawler()
+                    "lostfilm" -> LostFilmCrawler()
+                    "newstudio" -> NewStudioCrawler()
+                    else -> {
+                        logger.warn("Crawler for $source is not implemented yet. Do nothing")
+                        continue@loop
+                    }
                 }
+                crawlNewSeriesAndNotify(connection, source, crawler)
             }
         }
 
@@ -127,6 +130,7 @@ object Main {
         } catch (e: IOException) {
             showStatement.close()
             subscriptionStatement.close()
+            updateStatement.close()
         }
     }
 
