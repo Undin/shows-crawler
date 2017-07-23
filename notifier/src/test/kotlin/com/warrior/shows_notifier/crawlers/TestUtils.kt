@@ -1,7 +1,6 @@
 package com.warrior.shows_notifier.crawlers
 
 import okhttp3.mockwebserver.MockResponse
-import okhttp3.mockwebserver.MockWebServer
 import okio.Buffer
 
 object TestUtils {
@@ -15,5 +14,3 @@ object TestUtils {
                 .setBody(buffer)
     }
 }
-
-fun MockWebServer.resolve(path: String): String = url(path).toString()
