@@ -1,4 +1,4 @@
-package com.warrior.shows_collector.newstudio
+package com.warrior.shows_collector
 
 import okhttp3.mockwebserver.MockResponse
 import okio.Buffer

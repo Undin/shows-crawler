@@ -15,7 +15,7 @@ internal data class LostFilmShow(
         @JsonProperty("link") val showUrl: String
 ) {
     fun toShow(sourceName: String, baseUrl: String): Show
-            = Show(sourceName, rawId.toInt(), title, localTitle, baseUrl + showUrl)
+            = Show(sourceName, rawId.toLong(), title, localTitle, baseUrl + showUrl)
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)

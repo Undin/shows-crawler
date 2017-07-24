@@ -34,7 +34,7 @@ class LostFilmCollector(private val sourceName: String) : ShowCollector {
                 .create(LostFilmApi::class.java)
     }
 
-    override fun collect(): List<Show> {
+    override fun collect(rawIds: Set<Long>): List<Show> {
         val shows = ArrayList<Show>()
 
         var offset = 0

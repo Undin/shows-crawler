@@ -5,7 +5,7 @@ package com.warrior.shows_collector
  */
 data class Show(
         val sourceName: String,
-        val rawId: Int,
+        val rawId: Long,
         val title: String,
         val localTitle: String,
         val showUrl: String

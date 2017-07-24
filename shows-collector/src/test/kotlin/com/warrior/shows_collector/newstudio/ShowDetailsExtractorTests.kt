@@ -1,7 +1,7 @@
 package com.warrior.shows_collector.newstudio
 
 import com.warrior.shows_collector.newstudio.ShowDetailsExtractor.ShowDetails
-import com.warrior.shows_collector.newstudio.TestUtils.mockHtmlResponse
+import com.warrior.shows_collector.TestUtils.mockHtmlResponse
 import okhttp3.mockwebserver.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
@@ -25,10 +25,10 @@ class ShowDetailsExtractorTests {
         server.setDispatcher(object : Dispatcher() {
             override fun dispatch(request: RecordedRequest): MockResponse {
                 return when (request.path) {
-                    FRINGE -> mockHtmlResponse("fringe.htm")
-                    GAME_OF_THRONES -> mockHtmlResponse("game_of_thrones.htm")
-                    LONGMIRE -> mockHtmlResponse("longmire.htm")
-                    REVOLUTION -> mockHtmlResponse("revolution.htm")
+                    FRINGE -> mockHtmlResponse("newstudio/fringe.htm")
+                    GAME_OF_THRONES -> mockHtmlResponse("newstudio/game_of_thrones.htm")
+                    LONGMIRE -> mockHtmlResponse("newstudio/longmire.htm")
+                    REVOLUTION -> mockHtmlResponse("newstudio/revolution.htm")
                     else -> MockResponse().setResponseCode(404)
                 }
             }

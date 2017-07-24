@@ -3,56 +3,59 @@ package com.warrior.shows_collector.newstudio
 import com.warrior.shows_collector.Show
 import com.warrior.shows_collector.ShowCollector
 import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.Logger
 import org.jsoup.Jsoup
+import org.jsoup.nodes.Element
 import java.io.IOException
 import java.net.URI
-import java.util.*
 
 /**
  * Created by warrior on 2/19/17.
  */
 class NewStudioCollector(
         private val sourceName: String,
-        private val baseUrl: String = BASE_URL) : ShowCollector {
+        private val baseUrl: String = BASE_URL
+) : ShowCollector {
 
-    private val EXCLUDED_ELEMENTS = setOf(
-            17,
-            101
-    )
+    private val baseUri: URI  = URI(baseUrl)
 
-    private val logger = LogManager.getLogger(javaClass)
+    private val logger: Logger = LogManager.getLogger(javaClass)
 
-    override fun collect(): List<Show> {
-        val shows = ArrayList<Show>()
-        try {
+    override fun collect(rawIds: Set<Long>): List<Show> {
+        return try {
             val document = Jsoup.connect(baseUrl).get()
             val elements = document.select("div#serialist li > a")
-            for (e in elements) {
-                val href = e.attr("href")
-                val rawId = href.removePrefix("/viewforum.php?f=").toInt()
-                if (rawId in EXCLUDED_ELEMENTS) {
-                    continue
-                }
-                val showUrl = URI(baseUrl).resolve(href).toString()
-                val showDetails = ShowDetailsExtractor.getShowDetails(showUrl)
-                if (showDetails != null) {
-                    val (title, localTitle) = showDetails
-                    val show = Show(sourceName, rawId, title, localTitle, showUrl)
-                    println(show)
-                    shows += show
-                } else {
-                    val elementName = e.text()
-                    logger.info("Can't extract show details from $elementName ($href)")
-                }
-            }
+            elements.mapNotNull { it.toShow(rawIds) }
         } catch (e: IOException) {
-            logger.error(e)
-            return emptyList()
+            logger.error(e.message, e)
+            emptyList()
         }
-        return shows
+    }
+
+    private fun Element.toShow(rawIds: Set<Long>): Show? {
+        val href = attr("href")
+        val rawId = href.removePrefix("/viewforum.php?f=").toLong()
+        if (rawId in EXCLUDED_ELEMENTS || rawId in rawIds) return null
+
+        val showUrl = baseUri.resolve(href).toString()
+        val showDetails = ShowDetailsExtractor.getShowDetails(showUrl)
+        return if (showDetails != null) {
+            val (title, localTitle) = showDetails
+            val show = Show(sourceName, rawId, title, localTitle, showUrl)
+            logger.debug(show)
+            show
+        } else {
+            logger.info("Can't extract show details from ${text()} ($href)")
+            null
+        }
     }
 
     companion object {
         private const val BASE_URL = "http://newstudio.tv"
+
+        private val EXCLUDED_ELEMENTS = setOf(
+                17L,
+                101
+        )
     }
 }

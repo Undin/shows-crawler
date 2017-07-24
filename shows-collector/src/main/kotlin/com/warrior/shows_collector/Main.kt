@@ -4,13 +4,14 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import com.warrior.shows_collector.alexfilm.AlexFilmCollector
 import com.warrior.shows_collector.lostfilm.LostFilmCollector
 import com.warrior.shows_collector.newstudio.NewStudioCollector
 import org.apache.logging.log4j.LogManager
 import java.io.File
 import java.io.FileNotFoundException
-import java.sql.*
-import java.util.*
+import java.sql.Connection
+import java.sql.DriverManager
 
 object Main {
 
@@ -18,59 +19,74 @@ object Main {
 
     private val LOGGER = LogManager.getLogger(javaClass)
 
+    private val RAW_IDS_QUERY = "SELECT raw_id from shows where source_name = ?"
+
+    private val INSERT_SHOWS_STATEMENT = """
+            INSERT INTO shows (source_name, raw_id, title, local_title, show_url)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT ON CONSTRAINT shows_source_name_raw_id_unique DO UPDATE
+              SET show_url = EXCLUDED.show_url;
+    """
+
     @JvmStatic
     fun main(args: Array<String>) {
         val config = findConfig(CONFIG_NAME)
         val (url, username, password) = config.databaseConfig
 
         DriverManager.getConnection(url, username, password).use { connection ->
-            val collectors = collectors(config.sources)
-            collectShows(collectors, connection)
+            collectShows(config.sources, connection)
         }
     }
 
-    private fun collectShows(collectors: List<ShowCollector>, connection: Connection) {
-        for (collector in collectors) {
-            val shows = collector.collect()
-            val statement = connection.prepareStatement("""
-            INSERT INTO shows (source_name, raw_id, title, local_title, show_url)
-            VALUES (?, ?, ?, ?, ?)
-            ON CONFLICT ON CONSTRAINT shows_source_name_raw_id_unique DO UPDATE
-              SET show_url = EXCLUDED.show_url;""")
-            statement.use {
-                try {
-                    for (show in shows) {
-                        statement.setString(1, show.sourceName)
-                        statement.setInt(2, show.rawId)
-                        statement.setString(3, show.title)
-                        statement.setString(4, show.localTitle)
-                        statement.setString(5, show.showUrl)
-                        statement.addBatch()
+    private fun collectShows(sources: List<String>, connection: Connection) {
+        connection.prepareStatement(RAW_IDS_QUERY).use { selectStatement ->
+            for (source in sources) {
+                val collector = createCollector(source) ?: continue
+                val rawIds = try {
+                    selectStatement.setString(1, source)
+                    selectStatement.executeQuery().use { cursor ->
+                        val rawIds = mutableSetOf<Long>()
+                        while (cursor.next()) {
+                            rawIds += cursor.getLong("raw_id")
+                        }
+                        rawIds
                     }
-                    statement.executeBatch()
                 } catch (e: Exception) {
-                    LOGGER.error(e)
+                    LOGGER.error(e.message, e)
+                    emptySet<Long>()
                 }
+                val shows = collector.collect(rawIds)
+                insertShows(connection, shows)
             }
         }
     }
 
-    private fun collectors(sources: List<String>): List<ShowCollector> {
-        val collectors = ArrayList<ShowCollector>()
-        for (source in sources) {
-            val collector = when (source) {
-                "lostfilm" -> LostFilmCollector(source)
-                "newstudio" -> NewStudioCollector(source)
-                else -> {
-                    LOGGER.warn("collector for $source is not implemented yet")
-                    null
+    private fun insertShows(connection: Connection, shows: List<Show>) {
+        try {
+            connection.prepareStatement(INSERT_SHOWS_STATEMENT).use { statement ->
+                for ((sourceName, rawId, title, localTitle, showUrl) in shows) {
+                    statement.setString(1, sourceName)
+                    statement.setLong(2, rawId)
+                    statement.setString(3, title)
+                    statement.setString(4, localTitle)
+                    statement.setString(5, showUrl)
+                    statement.addBatch()
                 }
+                statement.executeBatch()
             }
-            if (collector != null) {
-                collectors += collector
-            }
+        } catch (e: Exception) {
+            LOGGER.error(e.message, e)
         }
-        return collectors
+    }
+
+    private fun createCollector(source: String): ShowCollector? = when (source) {
+        "alexfilm" -> AlexFilmCollector(source)
+        "lostfilm" -> LostFilmCollector(source)
+        "newstudio" -> NewStudioCollector(source)
+        else -> {
+            LOGGER.warn("collector for $source is not implemented yet")
+            null
+        }
     }
 
     private fun findConfig(fileName: String): Config {

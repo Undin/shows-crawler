@@ -1,7 +1,7 @@
 package com.warrior.shows_collector.newstudio
 
 import com.warrior.shows_collector.Show
-import com.warrior.shows_collector.newstudio.TestUtils.mockHtmlResponse
+import com.warrior.shows_collector.TestUtils.mockHtmlResponse
 import okhttp3.mockwebserver.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
@@ -28,12 +28,12 @@ class NewStudioCollectorTests {
         server.setDispatcher(object : Dispatcher() {
             override fun dispatch(request: RecordedRequest): MockResponse {
                 return when (request.path) {
-                    ROOT -> mockHtmlResponse("newstudio.htm")
-                    FRINGE -> mockHtmlResponse("fringe.htm")
-                    GAME_OF_THRONES -> mockHtmlResponse("game_of_thrones.htm")
-                    LONGMIRE -> mockHtmlResponse("longmire.htm")
-                    REVOLUTION -> mockHtmlResponse("revolution.htm")
-                    OTHER -> mockHtmlResponse("other.htm")
+                    ROOT -> mockHtmlResponse("newstudio/newstudio.htm")
+                    FRINGE -> mockHtmlResponse("newstudio/fringe.htm")
+                    GAME_OF_THRONES -> mockHtmlResponse("newstudio/game_of_thrones.htm")
+                    LONGMIRE -> mockHtmlResponse("newstudio/longmire.htm")
+                    REVOLUTION -> mockHtmlResponse("newstudio/revolution.htm")
+                    OTHER -> mockHtmlResponse("newstudio/others.htm")
                     else -> MockResponse().setResponseCode(404)
                 }
             }
@@ -51,7 +51,7 @@ class NewStudioCollectorTests {
     }
 
     @Test
-    fun newStudioCollectorTest() {
+    fun testNewStudioCollector() {
         val baseUrl = server.url(ROOT).toString()
         val collector = NewStudioCollector(SOURCE_NAME, baseUrl)
         val shows = collector.collect()

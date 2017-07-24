@@ -5,5 +5,8 @@ package com.warrior.shows_collector
  */
 interface ShowCollector {
 
-    fun collect(): List<Show>
+    /**
+     * @param rawIds set of raw ids which are already collected
+     */
+    fun collect(rawIds: Set<Long> = emptySet()): List<Show>
 }
