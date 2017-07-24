@@ -1,7 +1,7 @@
 apply plugin: 'kotlin'
 apply plugin: 'com.github.johnrengelman.shadow'
 
-version = '0.3.2'
+version = '0.4.0'
 
 compileKotlin.kotlinOptions.jvmTarget = '1.8'
 
@@ -9,7 +9,6 @@ shadowJar {
     classifier = null
     manifest {
         attributes (
-                'Main-Class' : 'com.warrior.shows_notifier.Main',
                 'Implementation-Version' : version
         )
     }
@@ -19,7 +18,6 @@ dependencies {
     compile libraries.kotlin
     compile libraries.kotlinReflect
 
-    compile libraries.jsoup
     compile libraries.jackson
     compile libraries.jacksonXml
     compile libraries.jacksonYaml
@@ -29,6 +27,9 @@ dependencies {
 
     compile libraries.okhttp
     compile libraries.okhttpLogging
+    compile libraries.retrofit
+    compile libraries.retrofitJackson
+    compile libraries.jsoup
 
     compile libraries.log4j2
 

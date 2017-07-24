@@ -1,0 +1,616 @@
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>NewStudio</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <link rel="alternate" type="application/rss+xml" title="RSS" href="/rss.php">
+    <link rel="stylesheet" href="/templates/newstudio/css/newstudio.css" type="text/css" />
+    <script src="/templates/newstudio/js/jquery-latest.js"></script>
+    <script src="/templates/newstudio/js/jquery.autocomplete.js"></script>
+    <script src="/templates/newstudio/js/jquery.cookie.js"></script>
+
+    <script type="text/javascript">
+        $(function(){
+            $(".search-query").autocomplete({
+                serviceUrl: '/autocomplete.php',
+                minChars: 2,
+                delimiter: /(;)\s*/,
+                maxHeight: 400,
+                width: 640,
+                zIndex: 9999,
+                deferRequestBy: 300,
+                onSelect: function(data, value){
+                    window.location = '/'+value;
+                }
+            });
+        })
+    </script>
+
+    <script type="text/javascript" src="/misc/js/main.js?v=1"></script>
+    <script type="text/javascript">
+        var BB_ROOT       = "./";
+        var cookieDomain  = "newstudio.tv";
+        var cookiePath    = "/";
+        var cookieSecure  = 0;
+        var cookiePrefix  = "bb_";
+        var LOGGED_IN     = 1;
+        var InfoWinParams = 'HEIGHT=510,resizable=yes,WIDTH=780';
+
+        var user = {
+            opt_js: {"only_new":0,"h_av":0,"h_rnk_i":0,"h_post_i":0,"h_smile":0,"h_sig":0,"sp_op":0,"tr_t_ax":0,"tr_t_t":0,"hl_tr":1,"i_aft_l":0},
+
+            set: function(opt, val, days, reload) {
+                this.opt_js[opt] = val;
+                setCookie('opt_js', $.toJSON(this.opt_js), days);
+                if (reload) {
+                    window.location.reload();
+                }
+            }
+        }
+
+        var ajax = new Ajax('./ajax.php', 'POST', 'json');
+
+        function getElText (e)
+        {
+            var t = '';
+            if (e.textContent !== undefined) { t = e.textContent; } else if (e.innerText !== undefined) { t = e.innerText; } else { t = jQuery(e).text(); }
+            return t;
+        }
+        function escHTML (txt)
+        {
+            return txt.replace(/</g, '&lt;');
+        }
+    </script>
+</head>
+<body style="background: url('/images/fones/fonePic1489901247.jpg') no-repeat scroll 50% 0 #000000;padding-top:420px;">
+
+<style>
+    .up-button {
+        display: none;
+        position:fixed;
+        bottom: 4px;
+        background-color:#FBF9E4;
+        width:35px;
+        line-height:30px;
+        text-align:center;
+        font-size:1.4em;
+        text-decoration:none;
+        opacity:0.7;
+        z-index:5
+    }
+    .up-button:hover{
+        opacity: 1;
+    }
+    .up-left{
+        left:0;
+        border-radius:0 4px 4px 0;
+
+    }
+    .up-right{
+        right:0;
+        border-radius:4px 0 0 4px;
+
+    }
+
+</style>
+<script type="text/javascript">
+    jQuery(function($) {
+
+        var upperLimit = 100, scrollElem = $(".up-button"), scrollSpeed = 500;
+        $(window).scroll(function () {
+            var scrollTop = $(document).scrollTop();
+            if ( scrollTop > upperLimit ) {
+                $(scrollElem).stop().fadeTo(300, 1); // fade back in
+            } else {
+                $(scrollElem).stop().fadeTo(300, 0); // fade out
+            }
+        }).scroll();
+        $(scrollElem).click(function(){
+            $('html, body').animate({scrollTop:0}, scrollSpeed); return false;
+        });
+
+
+    });
+</script>
+<a href="#" class="up-button up-left"><img src="/images/up_arrow.png" style="width: 17px;height: 17px;z-index:2;"></a>
+<a href="#" class="up-button up-right"><img src="/images/up_arrow.png" style="width: 17px;height: 17px;z-index:2;"></a>
+
+<div id="wrap">
+    <div class="container-fluid">
+        <div class="navbar navbar-inverse">
+            <div class="navbar-inner">
+                <div class="container-fluid">
+                    <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+                    <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </a>
+                    <a class="brand" href="/">NewStudio.TV</a>
+                    <div class="nav-collapse collapse">
+
+                        <!--<ul class="nav">
+                            <li class="active"><a href="#"><i class="icon-film"></i> трекер</a></li>
+                        </ul>-->
+                        <div class="nav pull-right">
+
+                            <div class="btn-group">
+                                <a class="btn btn-inverse" href="/profile.php?mode=viewprofile&amp;u=138436">Warrior</a>
+                                <a class="btn btn-inverse dropdown-toggle" data-toggle="dropdown" href="#"><span class="icon-caret-down"></span></a>
+                                <ul class="dropdown-menu">
+                                    <li><a id="profile" href="/profile.php?mode=viewprofile&amp;u=138436"><i class="icon-user-md"></i> профиль</a></li>
+                                    <li><a id="privmsgl" href="/privmsg.php"><i class="icon-comments"></i> сообщения</a></li>
+                                    <li><a id="logout" href="/login.php?logout=1"><i class="icon-signout"></i> Выход</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <ul class="nav pull-right">
+                            <li><a href="/tracker.php"><i class="icon-film"></i> Релизы</a></li>
+                            <li><a href="/forum.php"><i class="icon-comments-alt"></i> Форум</a></li>
+                        </ul>
+                        <form class="navbar-search pull-right" action="/tracker.php#results" method="post">
+                            <input type="hidden" name="max" value="1">
+                            <input type="hidden" name="to" value="1">
+                            <input name="nm" class="search-query" type="text" placeholder="Найти сериал" style="width:310px;">&nbsp;
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="text-align:center;text-align:middle;margin:0 auto;background:#dbdbdb;">
+        <br><center><object width="728" height="90">
+        <param name="movie" value="menu.swf">
+        <embed src="menu.swf" width="728" height="90">
+        </embed>
+    </object></center><br>        </div>
+
+
+    <div class="container-fluid bg-img">
+
+        <div class="row-fluid">
+            <div  id="sideLeftW" class="span9">
+                <div id="sideLeft">
+
+
+
+                    <script type="text/javascript">
+                        $(function(){
+                            $('a#news_link').click(function(){
+                                if($('a#news_link').hasClass("collapsed")){
+                                    $.cookie("news_main", null);
+                                } else {
+                                    $.cookie("news_main", "collapsed");
+
+                                }
+                            });
+                        })
+                    </script>
+
+
+                    <div class="accordion" id="newswrap">
+                        <div class="accordion-group" style="margin-left:5px;">
+
+                            <div class="accordion-heading">
+                                <h5 style="margin:0;">
+
+                                    <a id="news_link" class="accordion-toggle " data-toggle="collapse" data-parent="#news" href="#newswrap1">
+                                        Новости
+                                        <i class="icon-chevron-down pull-right"> </i>
+                                    </a>
+                                </h5>
+                            </div>
+
+                            <div id="newswrap1" class="accordion-body collapse in">
+                                <div class="accordion-inner">
+
+                                    <div class="well well-small">
+                                        <span class="label pull-right">29.01.2017</span>
+                                        <span class="label clearfix">Спонсирование: Сумеречные Охотники</span>
+                                        <br>
+                                        Друзья!Как вы, вероятно, заметили, с начала наступившего года наша группа выпускает не так много релизов, как обычно. Дело в том, что ряд сериалов, которые мы хотели взять в работу после праздников, остался без спонсорской поддержки. Почему так вышло сейчас не имеет значения, вдаваться в подробности мы не хотим. Суть остаётся такова, что очень мног...                    <a href="/viewtopic.php?t=22583" class="label-link pull-right">читать дальше…</a>
+                                    </div>
+
+
+                                    <div class="well well-small">
+                                        <span class="label pull-right">30.11.2016</span>
+                                        <span class="label clearfix">F.A.Q. или ответы на самые заколебавшие вопросы</span>
+                                        <br>
+                                        1. Почему у вас нет графика и/или расписания? А вон у других релиз-групп есть, а у вас чё? Ответ: Расписание возможно составлять только тогда, когда существует возможность контролировать запись и/или минимизировать задержки. У одних групп свои студии звукозаписи, у других групп задействованы исключительно актёры, которые пишутся дома, соответственн...                    <a href="/viewtopic.php?t=21921" class="label-link pull-right">читать дальше…</a>
+                                    </div>
+
+
+                                    <div class="well well-small">
+                                        <span class="label pull-right">31.10.2015</span>
+                                        <span class="label clearfix">Jessica Jones: Русский трейлер</span>
+                                        <br>
+                                        Телеканал Netflix снова приглашает нас посетить Адскую Кухню. На сей раз, нам расскажут о жизни и судьбе Джессики Джонс. Джессика получила свои способности еще в юности, но супергеройская карьера её сложилась крайне неудачно. Девушка страдает от пост-травматического расстройства, чувство вины не даёт ей покоя. Чтобы хоть как-то существовать, и зара...                    <a href="/viewtopic.php?t=16298" class="label-link pull-right">читать дальше…</a>
+                                    </div>
+
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-group" style="margin-left:5px;">
+                        <div class="accordion-heading">
+                            <h5 class="accordion-toggle">
+                                Релизы
+                            </h5>
+                        </div>
+                        <div class="accordion-body collapse in">
+                            <div class="accordion-inner">
+                                <div class="date">
+                                    <span class="label label-important">01.04.2017</span>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=455">
+                                        <img src="/images/posters/455.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23333"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23464"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23332"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23463"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23331"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23462"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=455">Хэп и Леонард</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Хэп и Леонард (Сезон 2, Серия 3) / Hap and Leonard (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=543">
+                                        <img src="/images/posters/543.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23329"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23460"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23328"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23459"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23327"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23458"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=543">Бессильные</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Бессильные (Сезон 1, Серия 6) / Powerless (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="date">
+                                    <span class="label label-important">31.03.2017</span>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=544">
+                                        <img src="/images/posters/544.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23326"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23456"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23325"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23455"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23324"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23454"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=544">24 часа: Наследие</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        24 часа: Наследие (Сезон 1, Серия 9) / 24: Legacy (2017) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=537">
+                                        <img src="/images/posters/537.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23323"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23453"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23322"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23452"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23321"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23451"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=537">Легион</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Легион (Сезон 1, Серия 8) / Legion (2017) WEBDLRip | Финал Сезона    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=392">
+                                        <img src="/images/posters/392.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23320"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23450"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23319"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23449"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23318"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23448"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=392">Супергёрл</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Супергёрл (Сезон 2, Серия 17) / Supergirl (2016) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=418">
+                                        <img src="/images/posters/418.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23317"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23447"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23316"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23446"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23315"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23445"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=418">Куантико</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Куантико (Сезон 2, Серия 15) / Quantico (2016) WEBDLRip    </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=455">
+                                        <img src="/images/posters/455.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23314"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23444"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23313"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23443"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=455">Хэп и Леонард</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        Хэп и Леонард (Сезон 2, Серия 2) / Hap and Leonard (2017) WEBDL     </div>
+                                </div>
+                                <div class="torrent">
+                                    <a href="/viewforum.php?f=340">
+                                        <img src="/images/posters/340.jpg" alt="pic" class="img-tracker">
+                                    </a>
+
+                                    <div class="pull-right taright">
+                                        <a href="/download.php?id=23312"><span class="label-link">Скачать 1080p</span></a>
+                                        <a href="/viewtopic.php?t=23442"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23311"><span class="label-link">Скачать 720p</span></a>
+                                        <a href="/viewtopic.php?t=23441"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                        <a href="/download.php?id=23310"><span class="label-link">Скачать 400p</span></a>
+                                        <a href="/viewtopic.php?t=23440"><span class="label-link"><i class="icon-film"></i></span></a><br>
+                                    </div>
+                                    <div class="ttitle">
+                                        <a class="label-title" href="/viewforum.php?f=340">100 (Сотня)</a>
+                                    </div>
+                                    <div class="tdesc">
+                                        100 (Сезон 4, Серия 8) / The 100 (2017) WEBDLRip    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="sideRightW" class="span3">
+                <div id="sideRight">
+                    <div class="accordion" id="serialist">
+                        <div class="accordion-group">
+                            <div class="accordion-heading">
+                                <a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse14">Г</a>
+                            </div>
+                            <div id="collapse14" class="accordion-body collapse">
+                                <div class="accordion-inner">
+                                    <ul>
+                                        <li><a href="/viewforum.php?f=133">Грань</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-group">
+                            <div class="accordion-heading">
+                                <a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse18">И</a>
+                            </div>
+                            <div id="collapse18" class="accordion-body collapse">
+                                <div class="accordion-inner">
+                                    <ul>
+                                        <li><a href="/viewforum.php?f=465">Игра престолов</a></li>
+                                        <li><a href="/viewforum.php?f=531">Изумрудный город</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-group">
+                            <div class="accordion-heading">
+                                <a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse110">Л</a>
+                            </div>
+                            <div id="collapse110" class="accordion-body collapse">
+                                <div class="accordion-inner">
+                                    <ul>
+                                        <li><a href="/viewforum.php?f=246">Лонгмайр</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-group">
+                            <div class="accordion-heading">
+                                <a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse114">П</a>
+                            </div>
+                            <div id="collapse114" class="accordion-body collapse">
+                                <div class="accordion-inner">
+                                    <ul>
+                                        <li><a href="/viewforum.php?f=17">Прочие сериалы</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-group">
+                            <div class="accordion-heading">
+                                <a class="accordion-toggle" data-toggle="collapse" data-parent="#serialist" href="#collapse115">Р</a>
+                            </div>
+                            <div id="collapse115" class="accordion-body collapse">
+                                <div class="accordion-inner">
+                                    <ul>
+                                        <li><a href="/viewforum.php?f=254">Революция</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid">
+            <div class="footer">
+                <div class="row-fluid">
+                    <div class="span4">
+                        <div class="navbar tl">
+                            <a href="/" title="На главную NewStudio.TV" class="brand">NewStudio.TV</a>
+                        </div>
+                    </div>
+                    <div class="span4 offset4 tr">
+
+
+                        <a target="_blank" href="/rss.php" tooltip="(ссылка откроется в новом окне)">
+                            <img border="0" src="/templates/newstudio/pic/icon-rss.png" tooltip="rss">
+                        </a>
+                        <a target="_blank" href="http://vk.com/club2682332" tooltip="(ссылка откроется в новом окне)">
+                            <img border="0" src="/templates/newstudio/pic/icon-vk.png" tooltip="вконтакте">
+                        </a>
+
+
+                        <div class="schet">
+                            <a href='http://hit.ua/?x=114090' target='_blank'>
+                                <script language="javascript" type="text/javascript"><!--
+                                Cd=document;Cr="&"+Math.random();Cp="&s=1";
+                                Cd.cookie="b=b";if(Cd.cookie)Cp+="&c=1";
+                                Cp+="&t="+(new Date()).getTimezoneOffset();
+                                if(self!=top)Cp+="&f=1";
+                                //--></script>
+                                <script language="javascript1.1" type="text/javascript"><!--
+                                if(navigator.javaEnabled())Cp+="&j=1";
+                                //--></script>
+                                <script language="javascript1.2" type="text/javascript"><!--
+                                if(typeof(screen)!='undefined')Cp+="&w="+screen.width+"&h="+
+                                    screen.height+"&d="+(screen.colorDepth?screen.colorDepth:screen.pixelDepth);
+                                //--></script>
+                                <script language="javascript" type="text/javascript"><!--
+                                Cd.write("<img src='http://c.hit.ua/hit?i=114090&g=0&x=1"+Cp+Cr+
+                                    "&r="+escape(Cd.referrer)+"&u="+escape(window.location.href)+
+                                    "' border='0' width='88' height='31' "+
+                                    "alt='hit.ua: сейчас на сайте, посетителей и просмотров за сегодня' title='hit.ua: сейчас на сайте, посетителей и просмотров за сегодня'/>");
+                                //--></script>
+                                <noscript>
+                                    <img src='http://c.hit.ua/hit?i=114090&amp;g=0&amp;x=1' border='0' width='88' height='31' alt='hit.ua: сейчас на сайте, посетителей и просмотров за сегодня' title='hit.ua: сейчас на сайте, посетителей и просмотров за сегодня'/>
+                                </noscript>
+                            </a>
+                            <!--LiveInternet counter--><script type="text/javascript"><!--
+                        document.write("<a href='http://www.liveinternet.ru/click' "+
+                            "target=_blank><img src='//counter.yadro.ru/hit?t14.6;r"+
+                            escape(document.referrer)+((typeof(screen)=="undefined")?"":
+                                ";s"+screen.width+"*"+screen.height+"*"+(screen.colorDepth?
+                                    screen.colorDepth:screen.pixelDepth))+";u"+escape(document.URL)+
+                            ";"+Math.random()+
+                            "' alt='' title='LiveInternet: показано число просмотров за 24"+
+                            " часа, посетителей за 24 часа и за сегодня' "+
+                            "border='0' width='88' height='31'><\/a>")
+                        //--></script><!--/LiveInternet-->
+                        </div>
+                    </div>
+                </div>
+                <div class="row-fluid">
+                    <ul class="span2 offset1">
+                        <li><a href="/faq.php">FAQ</a></li>
+                        <!--li><a href="#">Пункт меню3</a></li-->
+                    </ul>
+                    <ul class="span2">
+                        <li><a href="/advertiser.php">Рекламодателям</a></li>
+                        <!--li><a href="#">Пункт меню1</a></li>
+                        <li><a href="#">Пункт меню2</a></li>
+                        <li><a href="#">Пункт меню3</a></li-->
+                    </ul>
+                    <div class="span5" style="margin-top:-38px;">
+
+                        <!-- bigbn.com.ua 468x60-->
+                        <!--ScRipT lanGuagE='jAvAscrIpt'>
+                        //<!--
+                        d=document;
+                        rnd_num = Math.round((Math.random()*10000000));
+                        bbn_l='&'+escape((self!=top)?'f'+d.referrer:'h'+window.location.href);
+                        d.write('<iFrame src=http://ad0.bigmir.net/t.bbn?32789&0&f&'+rnd_num+bbn_l+
+                        ' width=468 height=60 frameborder=0 vspace=0 hspace=0 marginwidth=0 marginheight=0 scrolling=no>');
+                        d.write('<a target=_blank href=http://ad0.bigmir.net/c.bbn?32789&0&'+rnd_num+bbn_l+
+                        '><img src=http://ad0.bigmir.net/t.bbn?32789&0&i&'+rnd_num+bbn_l+' width=468 height=60 border=0 alt="BigBN Common"></a></iFrame>');
+                        //-->
+                        <!--/ScriPt-->
+                        <!-- bigbn.com.ua 468x60-->
+
+                    </div>
+
+
+
+
+
+
+                </div>
+            </div>
+        </div>
+    </div><!--wrap-->
+    <!-- login Modal -->
+    <div id="login" class="modal hide fade" tabindex="5" role="dialog" aria-labelledby="loginLabel" aria-hidden="true">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+            <h3 id="loginLabel">Выберите способ авторизации</h3>
+        </div>
+        <div class="modal-body">
+            <form class="form-signin" action="/login.php" method="post">
+                <input type="text" class="input-block-level" name="login_username" placeholder="Логин" accesskey="l">
+                <input type="password" class="input-block-level" name="login_password" placeholder="Пароль">
+                <label class="checkbox">
+                    <input type="checkbox" value="1" name="autologin" checked="checked">Запомнить меня
+                </label>
+                <input type="hidden" name="login" value="1">
+                <button class="btn btn-large" type="submit">Войти</button>
+                <a class="btn btn-large" href="profile.php?mode=register">Регистрация</a>
+                <a class="btn btn-large" href="profile.php?mode=sendpassword">Забыли пароль?</a>
+            </form>
+        </div>
+        <!-- <div class="modal-footer"></div> -->
+    </div>
+    <script src="/templates/newstudio/js/bootstrap.min.js"></script>
+    <script type="text/javascript">
+        $(function () {
+            $(window).resize(function () {
+                var bwidth = ($("body").outerWidth() - $("#wrap").outerWidth()) / 2;
+                $("#br").css("right", -bwidth);
+                $("#br").css("width", bwidth);
+                $("#bl").css("left", -bwidth);
+                $("#bl").css("width", bwidth);
+            }).resize();
+        });
+    </script>
+
+
+</body>
+
+</html>
+
+</div><!--/body_container-->
+
+</body>
+</html>
