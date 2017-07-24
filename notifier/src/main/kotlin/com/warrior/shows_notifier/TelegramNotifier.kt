@@ -24,7 +24,8 @@ class TelegramNotifier(telegramToken: String) : Callback {
     fun notify(chatId: Long, showUrl: String, episodes: List<ShowEpisode>) {
         val (season, episodeNumber, title, episodeUrl) = episodes[0]
         val text = if (episodes.size == 1) {
-            "$title ${formatEpisodeString(season, episodeNumber)}\n$episodeUrl"
+            val url = episodeUrl ?: showUrl
+            "$title ${formatEpisodeString(season, episodeNumber)}\n$url"
         } else {
             val (lastSeason, lastEpisodeNumber) = episodes.last()
             "$title ${formatEpisodeString(season, episodeNumber)} - ${formatEpisodeString(lastSeason, lastEpisodeNumber)}\n$showUrl"

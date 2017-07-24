@@ -21,11 +21,11 @@ class AlexFilmCrawlerTests : BaseCrawlerTests() {
         val crawler = AlexFilmCrawler(resolve(ROOT))
         val episodes = crawler.episodes()
         val expectedEpisodes = listOf(
-                *episodeRange(1, 1,4, "Will", ""),
-                *episodeRange(1, 1, 2, "Castlevania", ""),
-                *episodeRange(1, 1, 5, "The Mist", ""),
-                *episodeRange(4, 1, 1, "The Strain", ""),
-                *episodeRange(2, 1, 5, "Preacher", "")
+                *episodeRange(1, 1,4, "Will", null),
+                *episodeRange(1, 1, 2, "Castlevania", null),
+                *episodeRange(1, 1, 5, "The Mist", null),
+                *episodeRange(4, 1, 1, "The Strain", null),
+                *episodeRange(2, 1, 5, "Preacher", null)
         )
 
         Assertions.assertThat(episodes)
@@ -38,6 +38,6 @@ class AlexFilmCrawlerTests : BaseCrawlerTests() {
             startEpisode: Int,
             endEpisode: Int,
             title: String,
-            url: String
+            url: String?
     ): Array<ShowEpisode> = Array(endEpisode - startEpisode + 1) { ShowEpisode(season, it + 1, title, url) }
 }

@@ -7,7 +7,7 @@ data class ShowEpisode(
         val season: Int,
         val episodeNumber: Int,
         val showTitle: String,
-        val episodeUrl: String
+        val episodeUrl: String?
 ) : Comparable<ShowEpisode> {
 
     override fun compareTo(other: ShowEpisode): Int {

@@ -29,7 +29,7 @@ class AlexFilmCrawler(
                     val seasonNumber = matcher.group(2).toInt()
                     val firstEpisode = matcher.group(3).toInt()
                     val lastEpisode = matcher.group(4).toInt()
-                    (firstEpisode..lastEpisode).map { ShowEpisode(seasonNumber, it, title, "") }
+                    (firstEpisode..lastEpisode).map { ShowEpisode(seasonNumber, it, title, null) }
                 } else emptyList()
             }.distinct()
         } catch (e: IOException) {
