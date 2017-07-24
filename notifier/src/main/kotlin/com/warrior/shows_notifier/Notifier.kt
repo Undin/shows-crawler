@@ -7,6 +7,7 @@ import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.warrior.shows_notifier.entities.Episode
 import com.warrior.shows_notifier.entities.ShowEpisode
 import com.warrior.shows_notifier.sources.Crawler
+import com.warrior.shows_notifier.sources.Sources.*
 import com.warrior.shows_notifier.sources.alexfilm.AlexFilmCrawler
 import com.warrior.shows_notifier.sources.lostfilm.LostFilmCrawler
 import com.warrior.shows_notifier.sources.newstudio.NewStudioCrawler
@@ -60,9 +61,9 @@ object Notifier {
             val sources = getSources(connection)
             loop@ for (source in sources) {
                 val crawler = when (source) {
-                    "alexfilm" -> AlexFilmCrawler()
-                    "lostfilm" -> LostFilmCrawler()
-                    "newstudio" -> NewStudioCrawler()
+                    ALEX_FILM.sourceName -> AlexFilmCrawler()
+                    LOST_FILM.sourceName -> LostFilmCrawler()
+                    NEW_STUDIO.sourceName -> NewStudioCrawler()
                     else -> {
                         logger.warn("Crawler for $source is not implemented yet. Do nothing")
                         continue@loop

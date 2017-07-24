@@ -2,6 +2,7 @@ package com.warrior.shows_notifier.sources.alexfilm
 
 import com.warrior.shows_notifier.sources.ShowCollector
 import com.warrior.shows_notifier.entities.Show
+import com.warrior.shows_notifier.sources.Sources.ALEX_FILM
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import org.jsoup.Jsoup
@@ -11,8 +12,8 @@ import java.net.URI
 import java.util.regex.Pattern
 
 class AlexFilmCollector(
-        private val sourceName: String,
-        private val baseUrl: String = AlexFilmCollector.BASE_URL
+        private val baseUrl: String = ALEX_FILM.baseUrl,
+        private val sourceName: String = ALEX_FILM.sourceName
 ) : ShowCollector {
 
     private val logger: Logger = LogManager.getLogger(javaClass)
@@ -64,8 +65,6 @@ class AlexFilmCollector(
     }
 
     companion object {
-        private const val BASE_URL: String = "http://alexfilm.cc/"
-
         private val EXCLUDED_ELEMENTS = setOf(
                 79L,
                 182

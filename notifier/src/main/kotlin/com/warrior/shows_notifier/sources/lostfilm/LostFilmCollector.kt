@@ -3,22 +3,27 @@ package com.warrior.shows_notifier.sources.lostfilm
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.warrior.shows_notifier.sources.ShowCollector
 import com.warrior.shows_notifier.entities.Show
+import com.warrior.shows_notifier.sources.Sources.LOST_FILM
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import org.apache.logging.log4j.LogManager
 import retrofit2.Retrofit
 import retrofit2.converter.jackson.JacksonConverterFactory
 import java.io.IOException
+import java.net.URI
 import java.util.*
 
 /**
  * Created by warrior on 2/19/17.
  */
-class LostFilmCollector(private val sourceName: String) : ShowCollector {
+class LostFilmCollector(
+        baseUrl: String = LOST_FILM.baseUrl,
+        private val sourceName: String = LOST_FILM.sourceName
+) : ShowCollector {
 
     private val logger = LogManager.getLogger(javaClass)
-
     private val api: LostFilmApi
+    private val baseUri: URI = URI(baseUrl)
 
     init {
         val logging = HttpLoggingInterceptor(HttpLoggingInterceptor.Logger(logger::info))
@@ -27,7 +32,7 @@ class LostFilmCollector(private val sourceName: String) : ShowCollector {
                 .addInterceptor(logging)
                 .build()
         api = Retrofit.Builder()
-                .baseUrl(BASE_URL)
+                .baseUrl(baseUrl)
                 .client(client)
                 .addConverterFactory(JacksonConverterFactory.create(jacksonObjectMapper()))
                 .build()
@@ -48,7 +53,7 @@ class LostFilmCollector(private val sourceName: String) : ShowCollector {
                     if (lostfilmShows.isEmpty()) {
                         break
                     } else {
-                        shows += lostfilmShows.map { it.toShow(sourceName, BASE_URL) }
+                        shows += lostfilmShows.map { it.toShow(sourceName, baseUri) }
                         offset += 10
                         continue
                     }
@@ -69,9 +74,5 @@ class LostFilmCollector(private val sourceName: String) : ShowCollector {
         }
 
         return shows
-    }
-
-    companion object {
-        const val BASE_URL = "https://www.lostfilm.tv"
     }
 }

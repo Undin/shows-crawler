@@ -4,6 +4,7 @@ import com.warrior.shows_notifier.BaseTest
 import com.warrior.shows_notifier.TestUtils.mockHtmlResponse
 import com.warrior.shows_notifier.TestUtils.notFound
 import com.warrior.shows_notifier.entities.Show
+import com.warrior.shows_notifier.sources.Sources
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.RecordedRequest
 import org.assertj.core.api.Assertions
@@ -11,7 +12,7 @@ import org.junit.Test
 
 class AlexFilmCollectorTest : BaseTest() {
 
-    private val SOURCE_NAME = "alexfilm"
+    private val SOURCE_NAME = Sources.ALEX_FILM.sourceName
 
     private val ROOT = "/"
     private val `11_22_63` = "/?f=130"
@@ -31,7 +32,7 @@ class AlexFilmCollectorTest : BaseTest() {
     @Test
     fun testAlexFilmCollector() {
         val baseUrl = resolve(ROOT)
-        val collector = AlexFilmCollector(SOURCE_NAME, baseUrl)
+        val collector = AlexFilmCollector(baseUrl)
         val shows = collector.collect()
         Assertions.assertThat(shows).containsExactlyElementsOf(listOf(
                 Show(SOURCE_NAME, 130, "11.22.63", "11/22/63", resolve(`11_22_63`)),

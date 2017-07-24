@@ -4,6 +4,7 @@ import com.warrior.shows_notifier.BaseTest
 import com.warrior.shows_notifier.TestUtils.mockHtmlResponse
 import com.warrior.shows_notifier.TestUtils.notFound
 import com.warrior.shows_notifier.entities.Show
+import com.warrior.shows_notifier.sources.Sources
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.RecordedRequest
 import org.assertj.core.api.Assertions.assertThat
@@ -14,7 +15,7 @@ import org.junit.Test
  */
 class NewStudioCollectorTest : BaseTest() {
 
-    private val SOURCE_NAME = "newstudio"
+    private val SOURCE_NAME = Sources.NEW_STUDIO.sourceName
 
     private val ROOT = "/"
     private val FRINGE = "/viewforum.php?f=133"
@@ -36,7 +37,7 @@ class NewStudioCollectorTest : BaseTest() {
     @Test
     fun testNewStudioCollector() {
         val baseUrl = resolve(ROOT)
-        val collector = NewStudioCollector(SOURCE_NAME, baseUrl)
+        val collector = NewStudioCollector(baseUrl)
         val shows = collector.collect()
         assertThat(shows).containsExactlyElementsOf(listOf(
                 Show(SOURCE_NAME, 465, "Game of Thrones", "Игра Престолов", resolve(GAME_OF_THRONES)),
@@ -47,7 +48,7 @@ class NewStudioCollectorTest : BaseTest() {
     @Test
     fun errorTest() {
         val baseUrl = resolve("/wrong_path")
-        val collector = NewStudioCollector(SOURCE_NAME, baseUrl)
+        val collector = NewStudioCollector(baseUrl)
         val shows = collector.collect()
         assertThat(shows).isEmpty()
     }

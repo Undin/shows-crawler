@@ -6,6 +6,7 @@ import com.warrior.shows_notifier.entities.Show
 import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Query
+import java.net.URI
 
 /**
  * Created by warrior on 2/19/17.
@@ -28,6 +29,6 @@ internal data class LostFilmShow(
         @JsonProperty("title") val localTitle: String,
         @JsonProperty("link") val showUrl: String
 ) {
-    fun toShow(sourceName: String, baseUrl: String): Show
-            = Show(sourceName, rawId.toLong(), title, localTitle, baseUrl + showUrl)
+    fun toShow(sourceName: String, baseUrl: URI): Show
+            = Show(sourceName, rawId.toLong(), title, localTitle, baseUrl.resolve(showUrl).toString())
 }

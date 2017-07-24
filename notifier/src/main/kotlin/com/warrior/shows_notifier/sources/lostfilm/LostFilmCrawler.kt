@@ -5,8 +5,9 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
-import com.warrior.shows_notifier.sources.Crawler
 import com.warrior.shows_notifier.entities.ShowEpisode
+import com.warrior.shows_notifier.sources.Crawler
+import com.warrior.shows_notifier.sources.Sources.LOST_FILM
 import org.apache.logging.log4j.LogManager
 import org.jsoup.Jsoup
 import java.io.IOException
@@ -17,8 +18,8 @@ import java.util.regex.Pattern
  * Created by warrior on 10/29/16.
  */
 class LostFilmCrawler(
-        private val mode: Mode = LostFilmCrawler.Mode.WEB_PAGE,
-        baseUrl: String = LostFilmCrawler.DEFAULT_BASE_URL
+        private val mode: Mode = Mode.WEB_PAGE,
+        baseUrl: String = LOST_FILM.baseUrl
 ) : Crawler {
 
     private val logger = LogManager.getLogger(javaClass)
@@ -91,8 +92,6 @@ class LostFilmCrawler(
     }
 
     companion object {
-        private const val DEFAULT_BASE_URL = "https://www.lostfilm.tv/"
-
         private val URL_PATTERN = Pattern.compile("season_(\\d+)/episode_(\\d+)")
         private val RSS_TITLE_PATTERN = Pattern.compile("\\((.*?)\\).*\\(S(\\d+)E(\\d+)\\)")
         private val RSS_LINK_PATTERN = Pattern.compile("series/.*/season_\\d+/episode_\\d+/")

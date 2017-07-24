@@ -1,7 +1,8 @@
 package com.warrior.shows_notifier.sources.newstudio
 
-import com.warrior.shows_notifier.sources.Crawler
 import com.warrior.shows_notifier.entities.ShowEpisode
+import com.warrior.shows_notifier.sources.Crawler
+import com.warrior.shows_notifier.sources.Sources.NEW_STUDIO
 import org.apache.logging.log4j.LogManager
 import org.jsoup.Jsoup
 import java.io.IOException
@@ -13,7 +14,7 @@ import java.util.regex.Pattern
  * Created by warrior on 10/29/16.
  */
 class NewStudioCrawler(
-        baseUrl: String = NewStudioCrawler.DEFAULT_BASE_URL
+        baseUrl: String = NEW_STUDIO.baseUrl
 ) : Crawler {
 
     private val logger = LogManager.getLogger(javaClass)
@@ -50,9 +51,5 @@ class NewStudioCrawler(
             logger.error(e.message, e)
             emptyList()
         }
-    }
-
-    companion object {
-        private const val DEFAULT_BASE_URL = "http://newstudio.tv/"
     }
 }

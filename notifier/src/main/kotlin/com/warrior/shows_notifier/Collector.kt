@@ -6,6 +6,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.warrior.shows_notifier.entities.Show
 import com.warrior.shows_notifier.sources.ShowCollector
+import com.warrior.shows_notifier.sources.Sources.*
 import com.warrior.shows_notifier.sources.alexfilm.AlexFilmCollector
 import com.warrior.shows_notifier.sources.lostfilm.LostFilmCollector
 import com.warrior.shows_notifier.sources.newstudio.NewStudioCollector
@@ -82,9 +83,9 @@ object Collector {
     }
 
     private fun createCollector(source: String): ShowCollector? = when (source) {
-        "alexfilm" -> AlexFilmCollector(source)
-        "lostfilm" -> LostFilmCollector(source)
-        "newstudio" -> NewStudioCollector(source)
+        ALEX_FILM.sourceName -> AlexFilmCollector()
+        LOST_FILM.sourceName -> LostFilmCollector()
+        NEW_STUDIO.sourceName -> NewStudioCollector()
         else -> {
             LOGGER.warn("collector for $source is not implemented yet")
             null

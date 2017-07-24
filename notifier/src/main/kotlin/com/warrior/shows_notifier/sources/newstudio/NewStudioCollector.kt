@@ -1,7 +1,8 @@
 package com.warrior.shows_notifier.sources.newstudio
 
-import com.warrior.shows_notifier.sources.ShowCollector
 import com.warrior.shows_notifier.entities.Show
+import com.warrior.shows_notifier.sources.ShowCollector
+import com.warrior.shows_notifier.sources.Sources.NEW_STUDIO
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import org.jsoup.Jsoup
@@ -13,8 +14,8 @@ import java.net.URI
  * Created by warrior on 2/19/17.
  */
 class NewStudioCollector(
-        private val sourceName: String,
-        private val baseUrl: String = NewStudioCollector.BASE_URL
+        private val baseUrl: String = NEW_STUDIO.baseUrl,
+        private val sourceName: String = NEW_STUDIO.sourceName
 ) : ShowCollector {
 
     private val baseUri: URI  = URI(baseUrl)
@@ -51,8 +52,6 @@ class NewStudioCollector(
     }
 
     companion object {
-        private const val BASE_URL = "http://newstudio.tv"
-
         private val EXCLUDED_ELEMENTS = setOf(
                 17L,
                 101
