@@ -42,8 +42,13 @@ class AlexFilmCollector(
             val title = matcher.group(2)
             val showUrl =  baseUri.resolve(href).toString()
             if (!isShow(showUrl, title)) return null
-            Show(sourceName, rawId, title, localTitle, showUrl)
-        } else null
+            val show = Show(sourceName, rawId, title, localTitle, showUrl)
+            logger.info(show)
+            show
+        } else {
+            logger.info("$rawTitle doesn't look like a show")
+            null
+        }
     }
 
     private fun isShow(showUrl: String, expectedTitle: String): Boolean {

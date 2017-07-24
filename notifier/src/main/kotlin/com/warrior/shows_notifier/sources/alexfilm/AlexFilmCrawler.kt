@@ -30,6 +30,11 @@ class AlexFilmCrawler(
                     val seasonNumber = matcher.group(2).toInt()
                     val firstEpisode = matcher.group(3).toInt()
                     val lastEpisode = matcher.group(4).toInt()
+                    if (lastEpisode > firstEpisode) {
+                        logger.debug("alexfilm: $title S%02dE%02d-S%02dE%02d".format(seasonNumber, firstEpisode, seasonNumber, lastEpisode))
+                    } else {
+                        logger.debug("alexfilm: $title S%02dE%02d".format(seasonNumber, firstEpisode))
+                    }
                     (firstEpisode..lastEpisode).map { ShowEpisode(seasonNumber, it, title, null) }
                 } else emptyList()
             }.distinct()

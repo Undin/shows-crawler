@@ -43,7 +43,7 @@ class NewStudioCollector(
         return if (showDetails != null) {
             val (title, localTitle) = showDetails
             val show = Show(sourceName, rawId, title, localTitle, showUrl)
-            logger.debug(show)
+            logger.info(show)
             show
         } else {
             logger.info("Can't extract show details from ${text()} ($href)")

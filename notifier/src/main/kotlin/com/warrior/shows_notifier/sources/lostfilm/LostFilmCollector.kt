@@ -26,7 +26,7 @@ class LostFilmCollector(
     private val baseUri: URI = URI(baseUrl)
 
     init {
-        val logging = HttpLoggingInterceptor(HttpLoggingInterceptor.Logger(logger::info))
+        val logging = HttpLoggingInterceptor(HttpLoggingInterceptor.Logger(logger::debug))
         logging.level = HttpLoggingInterceptor.Level.BODY
         val client = OkHttpClient.Builder()
                 .addInterceptor(logging)
@@ -50,16 +50,18 @@ class LostFilmCollector(
                 if (response.isSuccessful) {
                     // `response.body()` is not null because `response.isSuccessful` is true
                     val lostfilmShows = response.body()!!.data
-                    if (lostfilmShows.isEmpty()) {
-                        break
-                    } else {
-                        shows += lostfilmShows.map { it.toShow(sourceName, baseUri) }
-                        offset += 10
-                        continue
+                    if (lostfilmShows.isEmpty()) break
+                    shows += lostfilmShows.mapNotNull {
+                        val show = it.toShow(sourceName, baseUri)
+                        if (show.rawId !in rawIds) {
+                            logger.info(show)
+                            show
+                        } else null
                     }
+                    offset += 10
+                    continue
                 } else {
                     attempts++
-
                 }
             } catch (e: IOException) {
                 logger.error(e)
