@@ -8,7 +8,6 @@ import org.jsoup.Jsoup
 import java.io.IOException
 import java.net.URI
 import java.util.*
-import java.util.regex.Pattern
 
 /**
  * Created by warrior on 10/29/16.
@@ -19,7 +18,6 @@ class NewStudioCrawler(
 
     private val logger = LogManager.getLogger(javaClass)
 
-    private val pattern = Pattern.compile("\\(Сезон (\\d+), Серия (\\d+)\\) / (.*) \\(\\d{4}\\)")
     private val baseUri = URI(baseUrl)
 
     override fun episodes(): List<ShowEpisode> {
@@ -35,14 +33,17 @@ class NewStudioCrawler(
                 val desc = element.select("div.tdesc").first()
                 if (desc != null) {
                     val text = desc.text()
-                    val matcher = pattern.matcher(text)
+                    val matcher = ELEMENT_PATTERN.matcher(text)
                     if (matcher.find()) {
-                        val season = matcher.group(1).toInt()
-                        val episodeNumber = matcher.group(2).toInt()
-                        val showTitle = matcher.group(3)
-                        val episode = ShowEpisode(season, episodeNumber, showTitle, baseUri.resolve(episodeUrl).toString())
-                        episodes += episode
-                        logger.debug("newstudio: $episode")
+                        val season = matcher.group(2).toInt()
+                        val firstEpisode = matcher.group(3).toInt()
+                        val lastEpisode = matcher.group(4)?.removePrefix("-")?.toInt() ?: firstEpisode
+                        val showTitle = matcher.group(5)
+                        for (episodeNumber in firstEpisode..lastEpisode) {
+                            val episode = ShowEpisode(season, episodeNumber, showTitle, baseUri.resolve(episodeUrl).toString())
+                            episodes += episode
+                            logger.debug("newstudio: $episode")
+                        }
                     }
                 }
             }

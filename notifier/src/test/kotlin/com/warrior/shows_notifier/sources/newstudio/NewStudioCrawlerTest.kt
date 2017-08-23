@@ -23,6 +23,8 @@ class NewStudioCrawlerTest : BaseTest() {
         val crawler = NewStudioCrawler(resolve(ROOT))
         val episodes = crawler.episodes()
         val expectedEpisodes = listOf(
+                ShowEpisode(1, 1, "Marvel's The Defenders", resolve("/viewforum.php?f=559")),
+                ShowEpisode(1, 2, "Marvel's The Defenders", resolve("/viewforum.php?f=559")),
                 ShowEpisode(2, 3, "Hap and Leonard", resolve("/viewforum.php?f=455")),
                 ShowEpisode(1, 6, "Powerless", resolve("/viewforum.php?f=543")),
                 ShowEpisode(1, 9, "24: Legacy", resolve("/viewforum.php?f=544")),

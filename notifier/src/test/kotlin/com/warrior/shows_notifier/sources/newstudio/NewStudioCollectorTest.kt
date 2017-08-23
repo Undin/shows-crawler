@@ -18,6 +18,7 @@ class NewStudioCollectorTest : BaseTest() {
     private val SOURCE_NAME = Sources.NEW_STUDIO.sourceName
 
     private val ROOT = "/"
+    private val DEFENDERS = "/viewforum.php?f=559"
     private val FRINGE = "/viewforum.php?f=133"
     private val GAME_OF_THRONES = "/viewforum.php?f=465"
     private val LONGMIRE = "/viewforum.php?f=246"
@@ -26,6 +27,7 @@ class NewStudioCollectorTest : BaseTest() {
 
     override fun response(request: RecordedRequest): MockResponse = when (request.path) {
         ROOT -> mockHtmlResponse("newstudio/newstudio.html")
+        DEFENDERS -> mockHtmlResponse("newstudio/defenders.html")
         FRINGE -> mockHtmlResponse("newstudio/fringe.html")
         GAME_OF_THRONES -> mockHtmlResponse("newstudio/game_of_thrones.html")
         LONGMIRE -> mockHtmlResponse("newstudio/longmire.html")
@@ -40,6 +42,7 @@ class NewStudioCollectorTest : BaseTest() {
         val collector = NewStudioCollector(baseUrl)
         val shows = collector.collect()
         assertThat(shows).containsExactlyElementsOf(listOf(
+                Show(SOURCE_NAME, 559, "Marvel's The Defenders", "Защитники", resolve(DEFENDERS)),
                 Show(SOURCE_NAME, 465, "Game of Thrones", "Игра Престолов", resolve(GAME_OF_THRONES)),
                 Show(SOURCE_NAME, 254, "Revolution", "Революция", resolve(REVOLUTION)))
         )
