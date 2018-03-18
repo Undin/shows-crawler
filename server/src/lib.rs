@@ -2,13 +2,9 @@
 extern crate derive_new;
 #[macro_use]
 extern crate diesel;
-#[macro_use]
-extern crate diesel_codegen;
 extern crate itertools;
 #[macro_use]
 extern crate log;
-extern crate r2d2;
-extern crate r2d2_diesel;
 extern crate reqwest;
 #[macro_use]
 extern crate serde_derive;
@@ -19,8 +15,7 @@ pub mod schema;
 pub mod telegram_api;
 
 use diesel::pg::PgConnection;
-use r2d2::{Config, Pool, PooledConnection};
-use r2d2_diesel::ConnectionManager;
+use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
 use reqwest::Client;
 use std::sync::Arc;
 use telegram_api::{ApiResponse, TelegramApi};
@@ -33,12 +28,11 @@ pub struct Components {
 
 impl Components {
     pub fn new<S1: Into<String>, S2: Into<String>>(bot_token: S1, database_url: S2) -> Self {
-        let client = Client::new().unwrap();
+        let client = Client::new();
         let api = Arc::new(TelegramApi::new(client, bot_token));
 
-        let config = Config::default();
         let connection_manager = ConnectionManager::new(database_url);
-        let connection_pool = Pool::new(config, connection_manager)
+        let connection_pool = Pool::new(connection_manager)
             .expect("Failed to create connection pool");
 
         Components { api: api, connection_pool: connection_pool}

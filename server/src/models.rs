@@ -31,5 +31,3 @@ pub struct Subscription {
     pub show_id: i64,
     pub user_id: i32,
 }
-
-enable_multi_table_joins!(users, shows);

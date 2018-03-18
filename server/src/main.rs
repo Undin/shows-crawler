@@ -24,7 +24,6 @@ use server::schema::shows::dsl::{id as sid, shows, source_name, title};
 use server::schema::users::dsl::{active, chat_id as cid, has_active_session, id as uid, superuser, users};
 use server::schema::subscriptions::dsl::{show_id as sub_sid, subscriptions, user_id as sub_uid};
 use server::telegram_api::{CallbackQuery, Chat, ChatType, Message, Update, User};
-use std::ascii::AsciiExt;
 use std::cmp::min;
 use std::convert::Into;
 use std::fs::File;
@@ -58,7 +57,7 @@ fn main() {
     let config = read_config();
 
     let components = Components::new(config.bot_token, config.database_url);
-    let thread_pool = ThreadPool::new_with_name("thread-pool".into(), config.threads);
+    let thread_pool = ThreadPool::with_name("thread-pool".into(), config.threads);
 
     let mut update_id = 0i32;
 
@@ -223,8 +222,8 @@ fn on_start(components: &Components, chat_id: i64, user_id: i32, user_name: &str
     print_help(components, chat_id, false);
     let ref connection = *components.get_connection();
     let user = User::new(user_id, user_name.to_string(), chat_id, true, false, false);
-    if let Err(error) = insert(&user)
-        .into(user_table)
+    if let Err(error) = insert_into(user_table)
+        .values(&user)
         .execute(connection)
         .or_else(|_| update(users.filter(uid.eq(user_id)))
             .set(active.eq(true))
@@ -373,7 +372,7 @@ fn on_subscriptions_command(components: &Components, chat_id: i64, user_id: i32)
     let query = sub_table.inner_join(show_table)
         .select((source_name, title))
         .filter(sub_uid.eq(user_id))
-        .order((source_name, title).asc());
+        .order((source_name, title));
 
     let ref connection = *components.get_connection();
     match query.load::<(String, String)>(connection) {
@@ -438,7 +437,7 @@ fn on_unsubscribe(components: &Components, chat_id: i64, user_id: i32, text: &st
 fn create_subscription(components: &Components, connection: &PgConnection,
                        chat_id: i64, user_id: i32, show_id: i64, show_title: &str) {
     let subscription = Subscription::new(show_id, user_id);
-    if let Err(error) = insert(&subscription).into(sub_table).execute(connection) {
+    if let Err(error) = insert_into(sub_table).values(&subscription).execute(connection) {
         error!("Failed to create new subscription ({}, {}): {}", show_id, user_id, error);
     } else {
         components.send_message(chat_id, &format!("Subscription to {} created!", show_title));

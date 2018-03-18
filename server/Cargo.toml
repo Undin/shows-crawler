@@ -1,20 +1,17 @@
 [package]
 name = "server"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Undin <a.pendryak@yandex.ru>"]
 
 [dependencies]
-derive-new = "0.5"
-diesel = { version = "0.14", features = ["postgres"] }
-diesel_codegen = { version = "0.14", features = ["postgres"] }
-itertools = "0.6"
-log = "0.3"
-log4rs = "0.7"
-r2d2 = "0.7"
-r2d2-diesel = "0.14"
-reqwest = "0.7"
+derive-new = "0.4"
+diesel = { version = "1.1", features = ["postgres", "r2d2"] }
+itertools = "0.7"
+log = "0.4"
+log4rs = "0.8"
+reqwest = "0.8"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
 serde_yaml = "0.7"
-threadpool = "1.4"
+threadpool = "1.7"
