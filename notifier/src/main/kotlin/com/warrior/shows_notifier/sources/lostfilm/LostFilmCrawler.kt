@@ -10,6 +10,7 @@ import com.warrior.shows_notifier.sources.Crawler
 import com.warrior.shows_notifier.sources.Sources.LOST_FILM
 import org.apache.logging.log4j.LogManager
 import org.jsoup.Jsoup
+import org.jsoup.nodes.Element
 import java.io.IOException
 import java.net.URI
 import java.util.regex.Pattern
@@ -39,29 +40,43 @@ class LostFilmCrawler(
             return document.select("div.row")
                     .asSequence()
                     .flatMap { row ->
-                        val title = row.select("div.name-en")
-                                .first()
-                                ?.text() ?: return@flatMap emptySequence<ShowEpisode>()
-                        val episodeUrl = row.select("a[href~=^/series/.*/season_\\d+/episode_\\d+/$]")
-                                .first()
-                                ?.attr("href") ?: return@flatMap emptySequence<ShowEpisode>()
-                        val url = row.select("a.comment-blue-box[href]")
-                                .first()
-                                ?.attr("href") ?: return@flatMap emptySequence<ShowEpisode>()
-                        val matcher = URL_PATTERN.matcher(url)
-                        if (matcher.find()) {
-                            val season = matcher.group(1).toInt()
-                            val episodeNumber = matcher.group(2).toInt()
-                            val episode = ShowEpisode(season, episodeNumber, title, baseUri.resolve(episodeUrl).toString())
-                            logger.debug("lostfilm: $episode")
-                            sequenceOf(episode)
-                        } else emptySequence()
+                        try {
+                            parseRow(row)
+                        } catch (e: Exception) {
+                            logger.error(e)
+                            emptySequence<ShowEpisode>()
+                        }
 
                     }.toList()
         } catch (e: IOException) {
             logger.error(e.message, e)
             emptyList()
         }
+    }
+
+    private fun parseRow(row: Element): Sequence<ShowEpisode> {
+        val title = row.select("div.name-en")
+                .first()
+                ?.text() ?: return emptySequence()
+        val episodeUrl = row.select("a[href~=^/series/.*/season_\\d+/episode_\\d+/$]")
+                .first()
+                ?.attr("href") ?: return emptySequence()
+        val url = row.select("a.comment-blue-box[href]")
+                .first()
+                ?.attr("href") ?: return emptySequence()
+        val matcher = URL_PATTERN.matcher(url)
+        return if (matcher.find()) {
+            val season = matcher.group(1).toInt()
+            val episodeNumber = matcher.group(2).toInt()
+            val episode = try {
+                ShowEpisode(season, episodeNumber, title, baseUri.resolve(episodeUrl).toString())
+            } catch (e: Exception) {
+                logger.error(e)
+                return emptySequence()
+            }
+            logger.debug("lostfilm: $episode")
+            sequenceOf(episode)
+        } else emptySequence()
     }
 
     private fun parseRSS(contentUrl: String): List<ShowEpisode> {
